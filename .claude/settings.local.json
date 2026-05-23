@@ -1,7 +1,38 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)"
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(cat /Users/victormonteiro/Documents/sistema-formulas/package.json && which node && ls ~/.nvm/versions/node 2>/dev/null || echo \"nvm not found\")",
+      "Bash(~/.nvm/nvm.sh)",
+      "Bash(nvm ls *)",
+      "Bash(/usr/local/bin/node --version)",
+      "Bash(/opt/homebrew/bin/node --version)",
+      "Bash(brew list *)",
+      "Bash(NODE_OPTIONS=--openssl-legacy-provider npm run dev)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(kill %1)",
+      "Bash(timeout 15 npm run dev)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(brew install *)",
+      "Bash(curl -fsSL https://nodejs.org/dist/v20.11.0/node-v20.11.0-darwin-x64.tar.gz -o /tmp/node20.tar.gz)",
+      "Bash(find /Users/victormonteiro -name \"nvm.sh\" 2>/dev/null | head -5 && ls /Users/victormonteiro/.nvm/ 2>/dev/null)",
+      "Bash(find /usr/local /opt/homebrew /Users/victormonteiro -name \"nvm\" -type f 2>/dev/null | head -10)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pkill -f \"next dev\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(xargs kill -9)",
+      "Bash(sleep 8 && cat /tmp/next-dev.log)",
+      "Bash(curl -s -X POST http://localhost:3000/api/submit -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Pontos: {d[\\\\\"pontuacaoTotal\\\\\"]} → Fórmula {d[\\\\\"formula\\\\\"]}'\\)\")",
+      "Bash(python scripts/office/unpack.py \"/Users/victormonteiro/Downloads/victor monteiro 01.docx\" /tmp/docx_unpacked/)",
+      "Bash(python3 scripts/office/unpack.py \"/Users/victormonteiro/Downloads/victor monteiro 01.docx\" /tmp/docx_unpacked/)",
+      "Bash(pip3 install *)",
+      "Bash(python3 -c \"import zipfile; z=zipfile.ZipFile\\('/Users/victormonteiro/Downloads/victor monteiro 01.docx'\\); z.extractall\\('/tmp/docx_unpacked'\\); print\\('done'\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(chmod +x /Users/victormonteiro/Documents/sistema-formulas/start-dev.sh)",
+      "Bash(curl -s \"http://localhost:3000/resultado?formula=B&pontos=35&nome=Jo%C3%A3o+Silva&cpf=123.456.789-00\")"
     ]
   }
 }
