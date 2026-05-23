@@ -50,7 +50,11 @@ export async function POST(req: NextRequest) {
       dataHora: new Date().toISOString(),
     };
 
-    await salvarResposta(registro);
+    // Persiste localmente quando possível (dev). Em produção serverless o
+    // filesystem é efêmero — a falha aqui não deve impedir a resposta.
+    salvarResposta(registro).catch((err) =>
+      console.warn("Não foi possível salvar resposta em disco:", err)
+    );
 
     return NextResponse.json({ formula, pontuacaoTotal, cliente });
   } catch (err) {

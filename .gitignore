@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dados de runtime (respostas dos clientes)
+/data/
+
+# assets originais não usados em produção
+/public/logo.tif
+/start-dev.sh
