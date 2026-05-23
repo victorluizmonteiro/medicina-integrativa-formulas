@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sistema-formulas",
+      "runtimeExecutable": "/Users/victormonteiro/.nvm/versions/node/v20.20.2/bin/node",
+      "runtimeArgs": ["/Users/victormonteiro/Documents/sistema-formulas/node_modules/.bin/next", "dev"],
+      "port": 3000
+    }
+  ]
+}

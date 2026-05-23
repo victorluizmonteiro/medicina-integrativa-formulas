@@ -1,65 +1,82 @@
-import Image from "next/image";
+import QuestionnaireForm from "@/components/QuestionnaireForm";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen bg-slate-50 relative overflow-hidden">
+      {/* Fundo decorativo sutil */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-60" />
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-teal-100 rounded-full blur-3xl opacity-60" />
+        <div className="absolute bottom-0 right-1/3 w-72 h-72 bg-cyan-100 rounded-full blur-3xl opacity-40" />
+      </div>
+
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
+              <span className="text-white text-sm font-bold">M</span>
+            </div>
+            <span className="font-semibold text-slate-800 text-sm tracking-wide">
+              Mental ABC
+            </span>
+          </div>
+          <div className="text-xs text-slate-500 border border-slate-200 rounded-full px-3 py-1 bg-white">
+            Saúde Integrativa
+          </div>
+        </header>
+
+        {/* Conteúdo */}
+        <div className="flex-1 flex flex-col items-center justify-start px-4 py-10">
+          {/* Hero */}
+          <div className="text-center mb-8 max-w-lg">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-full px-4 py-1.5 text-xs font-medium text-emerald-700 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Avaliação Clínica Personalizada
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-3">
+              Descubra sua{" "}
+              <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+                fórmula ideal
+              </span>
+            </h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Responda 30 questões com base fisiológica real e receba uma
+              prescrição personalizada para o seu perfil.
+            </p>
+          </div>
+
+          {/* Cards de perfis */}
+          <div className="grid grid-cols-3 gap-3 max-w-lg w-full mb-8">
+            {[
+              { letra: "A", nome: "Mente Acelerada", icone: "⚡", bg: "bg-amber-50", borda: "border-amber-200", texto: "text-amber-700" },
+              { letra: "B", nome: "Sem Energia",     icone: "🔋", bg: "bg-blue-50",  borda: "border-blue-200",  texto: "text-blue-700" },
+              { letra: "C", nome: "Instável",        icone: "🌊", bg: "bg-purple-50",borda: "border-purple-200",texto: "text-purple-700" },
+            ].map((item) => (
+              <div
+                key={item.letra}
+                className={`${item.bg} border ${item.borda} rounded-2xl p-3 text-center`}
+              >
+                <div className="text-xl mb-1">{item.icone}</div>
+                <div className={`text-xs font-bold mb-0.5 ${item.texto}`}>
+                  Fórmula {item.letra}
+                </div>
+                <div className="text-[11px] text-slate-500">{item.nome}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Formulário */}
+          <div className="w-full max-w-2xl bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+            <QuestionnaireForm />
+          </div>
+
+          <p className="mt-6 text-xs text-slate-400 text-center max-w-sm">
+            Suas respostas são confidenciais e utilizadas exclusivamente para
+            indicação da formulação adequada ao seu perfil.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
