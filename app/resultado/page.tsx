@@ -7,8 +7,7 @@ import { Formula } from "@/lib/types";
 import jsPDF from "jspdf";
 import { LOGO_BASE64 } from "@/lib/logo-b64";
 
-const WHATSAPP_FARMACIA = "5511987366682";
-const URL_FARMACIA = "https://osteopatiaalphaville.com.br";
+const WHATSAPP_FARMACIA = "5519996557376";
 
 function gerarDocPDF(nome: string, cpf: string, formula: Formula, pontos: number) {
   const resultado = obterResultado(formula, pontos);
@@ -179,8 +178,6 @@ function ResultadoContent() {
 
   const resultado = obterResultado(formula, pontos);
   const [visivel, setVisivel] = useState(false);
-  const [enviandoWpp, setEnviandoWpp] = useState(false);
-  const [msgWpp, setMsgWpp] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => setVisivel(true), 100);
@@ -192,45 +189,16 @@ function ResultadoContent() {
     doc.save(`prescricao-${formula}-${nome.replace(/\s/g, "_").toLowerCase()}.pdf`);
   };
 
-  const enviarWhatsApp = async () => {
-    setEnviandoWpp(true);
-    setMsgWpp("");
-
-    const doc = gerarDocPDF(nome, cpf, formula, pontos);
-    const nomeArquivo = `prescricao-${formula}-${nome.replace(/\s/g, "_").toLowerCase()}.pdf`;
-
-    const texto =
-      `Olá! Acabei de realizar a avaliação no sistema Mental ABC.\n\n` +
+  const contatarFarmacia = () => {
+    const texto = encodeURIComponent(
+      `Olá! Realizei a avaliação no sistema Mental ABC.\n\n` +
       `*Resultado:* ${resultado.nome} — ${resultado.subtitulo}\n` +
       `*Paciente:* ${nome}\n` +
-      `*CPF:* ${cpf}\n` +
-      `*Pontuação:* ${pontos} pontos\n\n` +
-      `Segue em anexo a prescrição em PDF. Gostaria de adquirir a formulação indicada.`;
-
-    // Tenta compartilhar com arquivo (funciona no celular via Web Share API)
-    try {
-      const blob = doc.output("blob");
-      const arquivo = new File([blob], nomeArquivo, { type: "application/pdf" });
-
-      if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-        await navigator.share({ files: [arquivo], title: "Prescrição Mental ABC", text: texto });
-        setMsgWpp("");
-        setEnviandoWpp(false);
-        return;
-      }
-    } catch {
-      // Fallback abaixo
-    }
-
-    // Fallback desktop: baixa o PDF e abre o WhatsApp com texto
-    doc.save(nomeArquivo);
-    const url = `https://wa.me/${WHATSAPP_FARMACIA}?text=${encodeURIComponent(texto)}`;
-    window.open(url, "_blank");
-    setMsgWpp("PDF baixado! Anexe o arquivo na conversa do WhatsApp que abrirá agora.");
-    setEnviandoWpp(false);
+      `*CPF:* ${cpf}\n\n` +
+      `Gostaria de obter mais informações sobre a formulação indicada.`
+    );
+    window.open(`https://wa.me/${WHATSAPP_FARMACIA}?text=${texto}`, "_blank");
   };
-
-  const irParaFarmacia = () => window.open(URL_FARMACIA, "_blank");
 
   const corBorda = formula === "A" ? "border-amber-200" : formula === "B" ? "border-blue-200" : "border-purple-200";
   const corTexto = formula === "A" ? "text-amber-700" : formula === "B" ? "text-blue-700" : "text-purple-700";
@@ -286,42 +254,17 @@ function ResultadoContent() {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Baixar Prescrição em PDF
+          Baixar Formulação
         </button>
 
         <button
-          onClick={enviarWhatsApp}
-          disabled={enviandoWpp}
-          className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-white bg-[#25D366] hover:bg-[#20c05a] disabled:opacity-60 transition-all duration-200 shadow-md"
+          onClick={contatarFarmacia}
+          className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-white bg-[#25D366] hover:bg-[#20c05a] transition-all duration-200 shadow-md"
         >
-          {enviandoWpp ? (
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-          )}
-          Enviar Prescrição pelo WhatsApp
-        </button>
-
-        {msgWpp && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <span className="text-amber-600 mt-0.5">📎</span>
-            <p className="text-sm text-amber-800">{msgWpp}</p>
-          </div>
-        )}
-
-        <button
-          onClick={irParaFarmacia}
-          className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all duration-200 shadow-sm"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
           </svg>
-          Ir para a Farmácia Parceira
+          Falar com a Farmácia Parceira
         </button>
 
         <a href="/" className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm text-slate-400 hover:text-slate-600 transition">
