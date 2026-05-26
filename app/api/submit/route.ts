@@ -8,7 +8,6 @@ import { RespostaFormulario } from "@/lib/types";
 
 const DATA_FILE = path.join(process.cwd(), "data", "responses.json");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function lerRespostas(): Promise<RespostaFormulario[]> {
   try {
@@ -66,6 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (cliente.email) {
       try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
         const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontuacaoTotal);
 
         await resend.emails.send({
