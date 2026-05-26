@@ -60,8 +60,9 @@ export default function QuestionnaireForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || "Erro ao enviar");
+      const emailParam = data.emailOk === true ? "&email=ok" : data.emailOk === false ? "&email=erro" : "";
       router.push(
-        `/resultado?formula=${data.formula}&pontos=${data.pontuacaoTotal}&nome=${encodeURIComponent(data.cliente.nome)}&cpf=${encodeURIComponent(data.cliente.cpf)}`
+        `/resultado?formula=${data.formula}&pontos=${data.pontuacaoTotal}&nome=${encodeURIComponent(data.cliente.nome)}&cpf=${encodeURIComponent(data.cliente.cpf)}${emailParam}`
       );
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao enviar formulário");
