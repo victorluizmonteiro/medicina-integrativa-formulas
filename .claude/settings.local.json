@@ -32,7 +32,10 @@
       "Bash(python3 -c \"import zipfile; z=zipfile.ZipFile\\('/Users/victormonteiro/Downloads/victor monteiro 01.docx'\\); z.extractall\\('/tmp/docx_unpacked'\\); print\\('done'\\)\")",
       "Bash(python3 -c ' *)",
       "Bash(chmod +x /Users/victormonteiro/Documents/sistema-formulas/start-dev.sh)",
-      "Bash(curl -s \"http://localhost:3000/resultado?formula=B&pontos=35&nome=Jo%C3%A3o+Silva&cpf=123.456.789-00\")"
+      "Bash(curl -s \"http://localhost:3000/resultado?formula=B&pontos=35&nome=Jo%C3%A3o+Silva&cpf=123.456.789-00\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
