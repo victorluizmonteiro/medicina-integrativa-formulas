@@ -6,6 +6,22 @@ import { obterResultado } from "@/lib/scoring";
 import { Formula } from "@/lib/types";
 import { gerarDocPDF } from "@/lib/generate-pdf";
 
+/* ── Logo VÍVEA — inline SVG ── */
+function ViveaLogo() {
+  return (
+    <svg width="130" height="32" viewBox="0 0 180 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Vívea" role="img">
+      <path d="M4 6 L17 36" stroke="#1A2E22" strokeWidth="3.2" strokeLinecap="round" />
+      <path d="M30 6 L17 36" stroke="#1A2E22" strokeWidth="3.2" strokeLinecap="round" />
+      <ellipse cx="5" cy="4" rx="4.5" ry="8" fill="#4A7C59" transform="rotate(-18 5 4)" />
+      <line x1="5" y1="8" x2="8" y2="-3" stroke="#E8F0EA" strokeWidth="0.9" strokeLinecap="round" />
+      <text x="42" y="30" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "26px", fontWeight: 700, fill: "#1A2E22", letterSpacing: "1.5px" }}>VÍVEA</text>
+      <line x1="144" y1="10" x2="144" y2="36" stroke="#4A7C59" strokeWidth="0.7" opacity="0.5" />
+      <text x="152" y="21" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: "#4A7C59", letterSpacing: "2px" }}>SAÚDE</text>
+      <text x="152" y="32" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: "#4A7C59", letterSpacing: "2px" }}>NATURAL</text>
+    </svg>
+  );
+}
+
 const WHATSAPP_FARMACIA = "5519996557376";
 
 function ResultadoContent() {
@@ -47,10 +63,14 @@ function ResultadoContent() {
     window.open(`https://wa.me/${WHATSAPP_FARMACIA}?text=${texto}`, "_blank");
   };
 
-  const corBorda = formula === "A" ? "border-amber-200" : formula === "B" ? "border-blue-200" : "border-purple-200";
-  const corTexto = formula === "A" ? "text-amber-700" : formula === "B" ? "text-blue-700" : "text-purple-700";
-  const corBg    = formula === "A" ? "bg-amber-50"   : formula === "B" ? "bg-blue-50"   : "bg-purple-50";
-  const gradiente = formula === "A" ? "from-amber-500 to-orange-500" : formula === "B" ? "from-blue-600 to-cyan-500" : "from-purple-500 to-violet-600";
+  // CALM·A = vermelho  VITAL·B = âmbar  EQUIL·C = sage
+  const cor      = formula === "A" ? "#C46060"  : formula === "B" ? "#C8763A"  : "#4A7C59";
+  const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
+  const corBorda = formula === "A" ? "border-[#C46060]/30" : formula === "B" ? "border-[#C8763A]/30" : "border-[#4A7C59]/30";
+  const corTexto = formula === "A" ? "text-[#C46060]"      : formula === "B" ? "text-[#C8763A]"      : "text-[#4A7C59]";
+  const corBg    = formula === "A" ? "bg-[#FDF0F0]"        : formula === "B" ? "bg-[#FDF5EE]"        : "bg-[#E8F0EA]";
+  const gradiente = formula === "A" ? "from-[#C46060] to-[#d4857f]" : formula === "B" ? "from-[#C8763A] to-[#d4955e]" : "from-[#4A7C59] to-[#6B9E7A]";
+  void cor; void corPale;
 
   return (
     <div className={`transition-all duration-700 ${visivel ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
@@ -142,31 +162,49 @@ function ResultadoContent() {
 
 export default function ResultadoPage() {
   return (
-    <main className="min-h-screen bg-slate-50 relative overflow-hidden">
+    <main style={{ minHeight: "100vh", background: "var(--vivea-cream)" }} className="relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50" />
-        <div className="absolute bottom-0 -left-40 w-80 h-80 bg-teal-100 rounded-full blur-3xl opacity-50" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-30" style={{ background: "#E8F0EA" }} />
+        <div className="absolute bottom-0 -left-40 w-80 h-80 rounded-full blur-3xl opacity-30" style={{ background: "#FDF5EE" }} />
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
-              <span className="text-white text-sm font-bold">M</span>
-            </div>
-            <span className="font-semibold text-slate-800 text-sm tracking-wide">Mental ABC</span>
-          </div>
-          <div className="text-xs text-slate-500 border border-slate-200 rounded-full px-3 py-1 bg-white">
+        <header
+          style={{
+            background: "rgba(247,243,238,0.95)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            borderBottom: "1px solid rgba(74,124,89,0.12)",
+            padding: "12px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <ViveaLogo />
+          <span
+            style={{
+              fontSize: "0.62rem",
+              fontWeight: 500,
+              letterSpacing: "1.8px",
+              textTransform: "uppercase",
+              color: "#4A7C59",
+              background: "#E8F0EA",
+              padding: "5px 12px",
+              borderRadius: "20px",
+              fontFamily: "var(--font-dm-sans)",
+            }}
+          >
             Resultado da Avaliação
-          </div>
+          </span>
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-start px-4 py-10">
           <div className="text-center mb-8 max-w-lg">
-            <p className="text-xs text-emerald-600 font-semibold uppercase tracking-widest mb-2">
+            <p style={{ fontSize: "0.68rem", fontWeight: 500, letterSpacing: "2.5px", textTransform: "uppercase", color: "var(--vivea-sage)", marginBottom: 8, fontFamily: "var(--font-dm-sans)" }}>
               Avaliação Concluída
             </p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 900, color: "var(--vivea-dark)", lineHeight: 1.2 }}>
               Sua prescrição está pronta
             </h1>
           </div>

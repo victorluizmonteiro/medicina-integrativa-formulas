@@ -17,12 +17,13 @@ export function gerarDocPDF(
     year: "numeric",
   });
 
+  // CALM·A = #C46060  VITAL·B = #C8763A  EQUIL·C = #4A7C59
   const corFormula: [number, number, number] =
     formula === "A"
-      ? [245, 158, 11]
+      ? [196, 96, 96]
       : formula === "B"
-      ? [37, 99, 235]
-      : [147, 51, 234];
+      ? [200, 118, 58]
+      : [74, 124, 89];
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
