@@ -69,10 +69,10 @@ export async function POST(req: NextRequest) {
         const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontuacaoTotal);
 
         await resend.emails.send({
-          from: "Mental ABC <onboarding@resend.dev>",
+          from: "Vívea Saúde Natural <onboarding@resend.dev>",
           replyTo: "victorluiz.monteiro@gmail.com",
           to: [cliente.email],
-          subject: `Sua prescrição Mental ABC — Fórmula ${resultado.nome}`,
+          subject: `Sua prescrição Vívea — Fórmula ${resultado.nome}`,
           html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -83,9 +83,9 @@ export async function POST(req: NextRequest) {
       <table width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
         <!-- Cabeçalho -->
         <tr>
-          <td style="background:linear-gradient(135deg,#10b981,#0d9488);padding:28px 32px;text-align:center;">
-            <p style="margin:0;color:#ffffff;font-size:22px;font-weight:900;letter-spacing:0.5px;">Mental ABC</p>
-            <p style="margin:6px 0 0;color:#d1fae5;font-size:13px;">Saúde Integrativa</p>
+          <td style="background:linear-gradient(135deg,#1A2E22,#4A7C59);padding:28px 32px;text-align:center;">
+            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:900;letter-spacing:2px;font-family:Georgia,serif;">VÍVEA</p>
+            <p style="margin:6px 0 0;color:#9ABFA8;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Saúde Natural</p>
           </td>
         </tr>
         <!-- Saudação -->
