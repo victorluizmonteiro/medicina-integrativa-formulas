@@ -38,7 +38,6 @@ export default function ResultadoPage() {
   const [sessao, setSessao]         = useState<Sessao | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [visivel, setVisivel]       = useState(false);
-  const [baixando, setBaixando]     = useState(false);
 
   /* Lê os dados da sessão ao montar */
   useEffect(() => {
@@ -101,33 +100,6 @@ export default function ResultadoPage() {
   const cor      = formula === "A" ? "#C46060"  : formula === "B" ? "#C8763A"  : "#4A7C59";
   const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
   const corLight = formula === "A" ? "#d4857f"  : formula === "B" ? "#d4955e"  : "#6B9E7A";
-
-  /* Download do PDF via POST ao servidor */
-  const baixarPDF = async () => {
-    if (baixando) return;
-    setBaixando(true);
-    try {
-      const res = await fetch("/api/pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, cpf, formula, pontos }),
-      });
-      if (!res.ok) throw new Error("Falha ao gerar PDF");
-
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href     = url;
-      a.download = `prescricao-vivea-${formula}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Não foi possível gerar o PDF. Tente novamente.");
-    } finally {
-      setBaixando(false);
-    }
-  };
 
   const contatarFarmacia = () => {
     const texto = encodeURIComponent(
@@ -196,21 +168,13 @@ export default function ResultadoPage() {
             style={{ transition: "opacity 0.7s, transform 0.7s", opacity: visivel ? 1 : 0, transform: visivel ? "translateY(0)" : "translateY(24px)" }}
           >
 
-            {/* Banner de e-mail */}
+            {/* Confirmação de e-mail */}
             {emailOk === true && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 16, padding: "12px 16px", marginBottom: 16, fontSize: "0.875rem", color: "#065f46", fontFamily: "var(--font-dm-sans)" }}>
                 <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Prescrição enviada para o seu e-mail!
-              </div>
-            )}
-            {emailOk === false && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 16, padding: "12px 16px", marginBottom: 16, fontSize: "0.875rem", color: "#92400e", fontFamily: "var(--font-dm-sans)" }}>
-                <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-                </svg>
-                Não foi possível enviar o e-mail. Baixe o PDF abaixo.
+                Prescrição também enviada para o seu e-mail!
               </div>
             )}
 
@@ -331,78 +295,97 @@ export default function ResultadoPage() {
               </div>
             </div>
 
-            {/* Ações */}
+            {/* Aviso da farmácia + ações */}
             <div style={{ display: "grid", gap: 12 }}>
 
-              {/* Baixar PDF */}
-              <button
-                onClick={baixarPDF}
-                disabled={baixando}
+              {/* Mensagem principal — prescrição enviada à farmácia */}
+              <div
                 style={{
+                  background: "var(--vivea-dark)",
+                  borderRadius: 18,
+                  padding: "20px 22px",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  width: "100%",
-                  padding: "16px 24px",
-                  borderRadius: 16,
-                  border: "none",
-                  cursor: baixando ? "wait" : "pointer",
-                  fontFamily: "var(--font-dm-sans)",
-                  fontSize: "1rem",
-                  fontWeight: 500,
-                  color: "#fff",
-                  background: `linear-gradient(135deg, ${cor}, ${corLight})`,
-                  opacity: baixando ? 0.7 : 1,
-                  transition: "opacity 0.2s",
-                  boxShadow: `0 6px 20px ${cor}40`,
+                  flexDirection: "column",
+                  gap: 14,
                 }}
               >
-                {baixando ? (
-                  <>
-                    <svg style={{ width: 18, height: 18, animation: "spin 0.8s linear infinite" }} viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
-                      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    </svg>
-                    Gerando PDF...
-                  </>
-                ) : (
-                  <>
-                    <svg style={{ width: 20, height: 20 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Baixar Formulação
-                  </>
-                )}
-              </button>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 40, height: 40,
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,0.10)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.25rem",
+                      flexShrink: 0,
+                    }}
+                  >
+                    💊
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-dm-sans)",
+                        fontWeight: 500,
+                        fontSize: "0.95rem",
+                        color: "#fff",
+                        marginBottom: 4,
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Prescrição enviada à farmácia parceira
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "var(--font-dm-sans)",
+                        fontWeight: 300,
+                        fontSize: "0.82rem",
+                        color: "rgba(255,255,255,0.65)",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      Sua fórmula{" "}
+                      <strong style={{ color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>
+                        {resultado.nome}
+                      </strong>{" "}
+                      foi encaminhada para a farmácia de manipulação parceira.
+                      Entre em contato pelo WhatsApp abaixo para adquiri-la.
+                    </p>
+                  </div>
+                </div>
 
-              {/* WhatsApp farmácia */}
-              <button
-                onClick={contatarFarmacia}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  width: "100%",
-                  padding: "16px 24px",
-                  borderRadius: 16,
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-dm-sans)",
-                  fontSize: "1rem",
-                  fontWeight: 500,
-                  color: "#fff",
-                  background: "#25D366",
-                  transition: "background 0.2s",
-                  boxShadow: "0 6px 20px rgba(37,211,102,0.35)",
-                }}
-              >
-                <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
-                Falar com a Farmácia Parceira
-              </button>
+                {/* Botão WhatsApp dentro do card escuro */}
+                <button
+                  onClick={contatarFarmacia}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "15px 24px",
+                    borderRadius: 12,
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-dm-sans)",
+                    fontSize: "1rem",
+                    fontWeight: 500,
+                    color: "#fff",
+                    background: "#25D366",
+                    transition: "opacity 0.2s",
+                    boxShadow: "0 4px 16px rgba(37,211,102,0.4)",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                  </svg>
+                  Falar com a Farmácia Parceira
+                </button>
+              </div>
 
               <a
                 href="/"
