@@ -93,7 +93,7 @@ export default function ResultadoPage() {
     );
   }
 
-  const { formula, pontos, nome, cpf, emailOk } = sessao;
+  const { formula, pontos, nome, cpf } = sessao;
   const resultado = obterResultado(formula, pontos);
 
   /* Cores por fórmula */
@@ -167,16 +167,6 @@ export default function ResultadoPage() {
             className="w-full max-w-lg"
             style={{ transition: "opacity 0.7s, transform 0.7s", opacity: visivel ? 1 : 0, transform: visivel ? "translateY(0)" : "translateY(24px)" }}
           >
-
-            {/* Confirmação de e-mail */}
-            {emailOk === true && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 16, padding: "12px 16px", marginBottom: 16, fontSize: "0.875rem", color: "#065f46", fontFamily: "var(--font-dm-sans)" }}>
-                <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Prescrição também enviada para o seu e-mail!
-              </div>
-            )}
 
             {/* Card principal */}
             <div
