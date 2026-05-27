@@ -1,10 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { obterResultado } from "@/lib/scoring";
-import { Formula } from "@/lib/types";
-import { gerarDocPDF } from "@/lib/generate-pdf";
+import type { Formula } from "@/lib/types";
 
 /* ── Logo VÍVEA — inline SVG ── */
 function ViveaLogo() {
@@ -22,153 +20,135 @@ function ViveaLogo() {
   );
 }
 
+/* ── Chave do sessionStorage ── */
+const SESSION_KEY = "vivea_resultado";
+
+/* ── Tipagem do payload armazenado ── */
+interface Sessao {
+  formula: Formula;
+  pontos: number;
+  nome: string;
+  cpf: string;
+  emailOk: boolean | null;
+}
+
 const WHATSAPP_FARMACIA = "5519996557376";
 
-function ResultadoContent() {
-  const params = useSearchParams();
-  const formula = (params.get("formula") || "A") as Formula;
-  const pontos = Number(params.get("pontos") || 0);
-  const nome = params.get("nome") || "";
-  const cpf = params.get("cpf") || "";
+export default function ResultadoPage() {
+  const [sessao, setSessao]         = useState<Sessao | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [visivel, setVisivel]       = useState(false);
+  const [baixando, setBaixando]     = useState(false);
 
-  const resultado = obterResultado(formula, pontos);
-  const [visivel, setVisivel] = useState(false);
-  const [emailEnviado, setEmailEnviado] = useState<boolean | null>(null);
-
+  /* Lê os dados da sessão ao montar */
   useEffect(() => {
-    const t = setTimeout(() => setVisivel(true), 100);
-    return () => clearTimeout(t);
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (raw) {
+        setSessao(JSON.parse(raw));
+      }
+    } catch {
+      // JSON malformado — trata como sessão não encontrada
+    }
+    setCarregando(false);
+    setTimeout(() => setVisivel(true), 80);
   }, []);
 
-  // Lê o status de email enviado passado pela URL (opcional)
-  useEffect(() => {
-    const status = params.get("email");
-    if (status === "ok") setEmailEnviado(true);
-    else if (status === "erro") setEmailEnviado(false);
-  }, [params]);
+  /* ── Sessão expirada / não encontrada ── */
+  if (!carregando && !sessao) {
+    return (
+      <main style={{ minHeight: "100vh", background: "var(--vivea-cream)", display: "flex", flexDirection: "column" }}>
+        <header style={{ background: "rgba(247,243,238,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(74,124,89,0.12)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <ViveaLogo />
+        </header>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>🍃</div>
+          <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.5rem", fontWeight: 900, color: "var(--vivea-dark)", marginBottom: 10 }}>
+            Sessão não encontrada
+          </h2>
+          <p style={{ fontSize: "0.9rem", color: "#777", fontFamily: "var(--font-dm-sans)", fontWeight: 300, maxWidth: 340, lineHeight: 1.6, marginBottom: 28 }}>
+            Os dados da avaliação ficam armazenados apenas durante esta sessão do navegador.
+            Por favor, refaça a avaliação para obter seu resultado.
+          </p>
+          <a
+            href="/"
+            style={{ background: "var(--vivea-dark)", color: "#fff", padding: "14px 28px", borderRadius: 12, textDecoration: "none", fontFamily: "var(--font-dm-sans)", fontSize: "0.95rem", fontWeight: 500 }}
+          >
+            Refazer avaliação →
+          </a>
+        </div>
+      </main>
+    );
+  }
 
-  const baixarPDF = () => {
-    const doc = gerarDocPDF(nome, cpf, formula, pontos);
-    doc.save(`prescricao-${formula}-${nome.replace(/\s/g, "_").toLowerCase()}.pdf`);
+  /* ── Loading inicial ── */
+  if (carregando || !sessao) {
+    return (
+      <main style={{ minHeight: "100vh", background: "var(--vivea-cream)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center", color: "#aaa", fontFamily: "var(--font-dm-sans)" }}>
+          <div style={{ width: 32, height: 32, border: "2px solid #4A7C59", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          Carregando resultado...
+        </div>
+      </main>
+    );
+  }
+
+  const { formula, pontos, nome, cpf, emailOk } = sessao;
+  const resultado = obterResultado(formula, pontos);
+
+  /* Cores por fórmula */
+  const cor      = formula === "A" ? "#C46060"  : formula === "B" ? "#C8763A"  : "#4A7C59";
+  const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
+  const corLight = formula === "A" ? "#d4857f"  : formula === "B" ? "#d4955e"  : "#6B9E7A";
+
+  /* Download do PDF via POST ao servidor */
+  const baixarPDF = async () => {
+    if (baixando) return;
+    setBaixando(true);
+    try {
+      const res = await fetch("/api/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome, cpf, formula, pontos }),
+      });
+      if (!res.ok) throw new Error("Falha ao gerar PDF");
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `prescricao-vivea-${formula}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setBaixando(false);
+    }
   };
 
   const contatarFarmacia = () => {
     const texto = encodeURIComponent(
-      `Olá! Realizei a avaliação no sistema Mental ABC.\n\n` +
+      `Olá! Realizei a avaliação VÍVEA.\n\n` +
       `*Resultado:* ${resultado.nome} — ${resultado.subtitulo}\n` +
-      `*Paciente:* ${nome}\n` +
-      `*CPF:* ${cpf}\n\n` +
+      `*Paciente:* ${nome}\n\n` +
       `Gostaria de obter mais informações sobre a formulação indicada.`
     );
     window.open(`https://wa.me/${WHATSAPP_FARMACIA}?text=${texto}`, "_blank");
   };
 
-  // CALM·A = vermelho  VITAL·B = âmbar  EQUIL·C = sage
-  const cor      = formula === "A" ? "#C46060"  : formula === "B" ? "#C8763A"  : "#4A7C59";
-  const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
-  const corBorda = formula === "A" ? "border-[#C46060]/30" : formula === "B" ? "border-[#C8763A]/30" : "border-[#4A7C59]/30";
-  const corTexto = formula === "A" ? "text-[#C46060]"      : formula === "B" ? "text-[#C8763A]"      : "text-[#4A7C59]";
-  const corBg    = formula === "A" ? "bg-[#FDF0F0]"        : formula === "B" ? "bg-[#FDF5EE]"        : "bg-[#E8F0EA]";
-  const gradiente = formula === "A" ? "from-[#C46060] to-[#d4857f]" : formula === "B" ? "from-[#C8763A] to-[#d4955e]" : "from-[#4A7C59] to-[#6B9E7A]";
-  void cor; void corPale;
-
-  return (
-    <div className={`transition-all duration-700 ${visivel ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-      {/* Aviso de e-mail */}
-      {emailEnviado === true && (
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-4 text-sm text-emerald-700">
-          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          Prescrição enviada para o seu e-mail!
-        </div>
-      )}
-      {emailEnviado === false && (
-        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4 text-sm text-amber-700">
-          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
-          </svg>
-          Não foi possível enviar o e-mail. Baixe o PDF abaixo.
-        </div>
-      )}
-
-      {/* Card principal */}
-      <div className={`bg-white border ${corBorda} rounded-3xl p-6 sm:p-8 mb-4 shadow-sm`}>
-        <div className={`inline-flex items-center gap-2 ${corBg} border ${corBorda} rounded-full px-3 py-1.5 text-xs font-semibold ${corTexto} mb-5`}>
-          <span className="text-lg">{resultado.icone}</span>
-          Perfil Identificado
-        </div>
-
-        <h2 className={`text-4xl sm:text-5xl font-black bg-gradient-to-r ${gradiente} bg-clip-text text-transparent mb-1`}>
-          {resultado.nome}
-        </h2>
-        <h3 className="text-xl font-semibold text-slate-800 mb-4">{resultado.subtitulo}</h3>
-
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`flex items-center gap-1.5 ${corBg} border ${corBorda} rounded-full px-3 py-1`}>
-            <span className={`text-sm font-bold ${corTexto}`}>{pontos} pts</span>
-            <span className="text-xs text-slate-400">/ 90</span>
-          </div>
-          <div className="text-xs text-slate-400">
-            {pontos < 10 ? "Perfil de baixa intensidade" : pontos < 18 ? "Perfil moderado" : "Perfil dominante"}
-          </div>
-        </div>
-
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-6">
-          <div
-            className={`h-full bg-gradient-to-r ${gradiente} rounded-full transition-all duration-1000`}
-            style={{ width: `${Math.min((pontos / 90) * 100, 100)}%` }}
-          />
-        </div>
-
-        <p className="text-slate-600 text-sm leading-relaxed mb-6">{resultado.descricao}</p>
-
-        <div className={`${corBg} border ${corBorda} rounded-2xl p-4`}>
-          <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Paciente</p>
-          <p className="text-slate-900 font-semibold">{nome}</p>
-          <p className="text-slate-500 text-sm">CPF: {cpf}</p>
-        </div>
-      </div>
-
-      {/* Ações */}
-      <div className="grid gap-3">
-        <button
-          onClick={baixarPDF}
-          className={`flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-white bg-gradient-to-r ${gradiente} hover:opacity-90 transition-all duration-200 shadow-md`}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Baixar Formulação
-        </button>
-
-        <button
-          onClick={contatarFarmacia}
-          className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-white bg-[#25D366] hover:bg-[#20c05a] transition-all duration-200 shadow-md"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-          </svg>
-          Falar com a Farmácia Parceira
-        </button>
-
-        <a href="/" className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm text-slate-400 hover:text-slate-600 transition">
-          ← Realizar nova avaliação
-        </a>
-      </div>
-    </div>
-  );
-}
-
-export default function ResultadoPage() {
   return (
     <main style={{ minHeight: "100vh", background: "var(--vivea-cream)" }} className="relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-30" style={{ background: "#E8F0EA" }} />
-        <div className="absolute bottom-0 -left-40 w-80 h-80 rounded-full blur-3xl opacity-30" style={{ background: "#FDF5EE" }} />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl opacity-25" style={{ background: corPale }} />
+        <div className="absolute bottom-0 -left-40 w-80 h-80 rounded-full blur-3xl opacity-25" style={{ background: corPale }} />
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
+
+        {/* Header */}
         <header
           style={{
             background: "rgba(247,243,238,0.95)",
@@ -200,6 +180,8 @@ export default function ResultadoPage() {
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-start px-4 py-10">
+
+          {/* Título da seção */}
           <div className="text-center mb-8 max-w-lg">
             <p style={{ fontSize: "0.68rem", fontWeight: 500, letterSpacing: "2.5px", textTransform: "uppercase", color: "var(--vivea-sage)", marginBottom: 8, fontFamily: "var(--font-dm-sans)" }}>
               Avaliação Concluída
@@ -209,17 +191,240 @@ export default function ResultadoPage() {
             </h1>
           </div>
 
-          <div className="w-full max-w-lg">
-            <Suspense
-              fallback={
-                <div className="text-center text-slate-400 py-20">
-                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                  Calculando resultado...
-                </div>
-              }
+          <div
+            className="w-full max-w-lg"
+            style={{ transition: "opacity 0.7s, transform 0.7s", opacity: visivel ? 1 : 0, transform: visivel ? "translateY(0)" : "translateY(24px)" }}
+          >
+
+            {/* Banner de e-mail */}
+            {emailOk === true && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 16, padding: "12px 16px", marginBottom: 16, fontSize: "0.875rem", color: "#065f46", fontFamily: "var(--font-dm-sans)" }}>
+                <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Prescrição enviada para o seu e-mail!
+              </div>
+            )}
+            {emailOk === false && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 16, padding: "12px 16px", marginBottom: 16, fontSize: "0.875rem", color: "#92400e", fontFamily: "var(--font-dm-sans)" }}>
+                <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                </svg>
+                Não foi possível enviar o e-mail. Baixe o PDF abaixo.
+              </div>
+            )}
+
+            {/* Card principal */}
+            <div
+              style={{
+                background: "#fff",
+                border: `1.5px solid ${cor}28`,
+                borderRadius: 24,
+                padding: "28px 24px",
+                marginBottom: 16,
+                boxShadow: "0 4px 32px rgba(26,46,34,0.07)",
+              }}
             >
-              <ResultadoContent />
-            </Suspense>
+              {/* Badge perfil */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: corPale,
+                  border: `1px solid ${cor}30`,
+                  borderRadius: 999,
+                  padding: "6px 14px",
+                  fontSize: "0.72rem",
+                  fontWeight: 600,
+                  color: cor,
+                  marginBottom: 20,
+                  fontFamily: "var(--font-dm-sans)",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                <span style={{ fontSize: "1.1rem" }}>{resultado.icone}</span>
+                Perfil Identificado
+              </div>
+
+              {/* Nome da fórmula */}
+              <h2
+                style={{
+                  fontFamily: "var(--font-playfair)",
+                  fontSize: "clamp(2.2rem, 8vw, 3rem)",
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  background: `linear-gradient(135deg, ${cor}, ${corLight})`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  marginBottom: 6,
+                }}
+              >
+                {resultado.nome}
+              </h2>
+              <h3
+                style={{
+                  fontFamily: "var(--font-dm-sans)",
+                  fontSize: "1.1rem",
+                  fontWeight: 500,
+                  color: "var(--vivea-dark)",
+                  marginBottom: 20,
+                }}
+              >
+                {resultado.subtitulo}
+              </h3>
+
+              {/* Pontuação */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    background: corPale,
+                    border: `1px solid ${cor}30`,
+                    borderRadius: 999,
+                    padding: "4px 12px",
+                  }}
+                >
+                  <span style={{ fontWeight: 700, color: cor, fontSize: "0.9rem", fontFamily: "var(--font-dm-sans)" }}>{pontos} pts</span>
+                  <span style={{ color: "#aaa", fontSize: "0.75rem", fontFamily: "var(--font-dm-sans)" }}>/ 90</span>
+                </div>
+                <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "var(--font-dm-sans)" }}>
+                  {pontos < 10 ? "Perfil de baixa intensidade" : pontos < 18 ? "Perfil moderado" : "Perfil dominante"}
+                </span>
+              </div>
+
+              {/* Barra de progresso */}
+              <div style={{ height: 6, background: "#f1f5f9", borderRadius: 999, overflow: "hidden", marginBottom: 20 }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.min((pontos / 90) * 100, 100)}%`,
+                    background: `linear-gradient(90deg, ${cor}, ${corLight})`,
+                    borderRadius: 999,
+                    transition: "width 1s ease",
+                  }}
+                />
+              </div>
+
+              {/* Descrição */}
+              <p style={{ fontSize: "0.875rem", lineHeight: 1.7, color: "#555", fontFamily: "var(--font-dm-sans)", fontWeight: 300, marginBottom: 20 }}>
+                {resultado.descricao}
+              </p>
+
+              {/* Box paciente */}
+              <div
+                style={{
+                  background: corPale,
+                  border: `1px solid ${cor}25`,
+                  borderRadius: 14,
+                  padding: "14px 18px",
+                }}
+              >
+                <p style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#aaa", marginBottom: 4, fontFamily: "var(--font-dm-sans)" }}>
+                  Paciente
+                </p>
+                <p style={{ fontWeight: 600, color: "var(--vivea-dark)", fontFamily: "var(--font-dm-sans)" }}>{nome}</p>
+                <p style={{ fontSize: "0.85rem", color: "#888", fontFamily: "var(--font-dm-sans)" }}>CPF: {cpf}</p>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div style={{ display: "grid", gap: 12 }}>
+
+              {/* Baixar PDF */}
+              <button
+                onClick={baixarPDF}
+                disabled={baixando}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  width: "100%",
+                  padding: "16px 24px",
+                  borderRadius: 16,
+                  border: "none",
+                  cursor: baixando ? "wait" : "pointer",
+                  fontFamily: "var(--font-dm-sans)",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  color: "#fff",
+                  background: `linear-gradient(135deg, ${cor}, ${corLight})`,
+                  opacity: baixando ? 0.7 : 1,
+                  transition: "opacity 0.2s",
+                  boxShadow: `0 6px 20px ${cor}40`,
+                }}
+              >
+                {baixando ? (
+                  <>
+                    <svg style={{ width: 18, height: 18, animation: "spin 0.8s linear infinite" }} viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    Gerando PDF...
+                  </>
+                ) : (
+                  <>
+                    <svg style={{ width: 20, height: 20 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Baixar Formulação
+                  </>
+                )}
+              </button>
+
+              {/* WhatsApp farmácia */}
+              <button
+                onClick={contatarFarmacia}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  width: "100%",
+                  padding: "16px 24px",
+                  borderRadius: 16,
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "var(--font-dm-sans)",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  color: "#fff",
+                  background: "#25D366",
+                  transition: "background 0.2s",
+                  boxShadow: "0 6px 20px rgba(37,211,102,0.35)",
+                }}
+              >
+                <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                Falar com a Farmácia Parceira
+              </button>
+
+              <a
+                href="/"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 16,
+                  textDecoration: "none",
+                  fontSize: "0.875rem",
+                  color: "#aaa",
+                  fontFamily: "var(--font-dm-sans)",
+                  transition: "color 0.2s",
+                }}
+              >
+                ← Realizar nova avaliação
+              </a>
+            </div>
+
           </div>
         </div>
       </div>

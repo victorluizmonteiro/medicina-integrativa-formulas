@@ -60,10 +60,20 @@ export default function QuestionnaireForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || "Erro ao enviar");
-      const emailParam = data.emailOk === true ? "&email=ok" : data.emailOk === false ? "&email=erro" : "";
-      router.push(
-        `/resultado?formula=${data.formula}&pontos=${data.pontuacaoTotal}&nome=${encodeURIComponent(data.cliente.nome)}&cpf=${encodeURIComponent(data.cliente.cpf)}${emailParam}`
+
+      // Armazena resultado na sessão — nenhum dado sensível vai para a URL
+      sessionStorage.setItem(
+        "vivea_resultado",
+        JSON.stringify({
+          formula: data.formula,
+          pontos: data.pontuacaoTotal,
+          nome: data.cliente.nome,
+          cpf: data.cliente.cpf,
+          emailOk: data.emailOk ?? null,
+        })
       );
+
+      router.push("/resultado");
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao enviar formulário");
       setCarregando(false);
