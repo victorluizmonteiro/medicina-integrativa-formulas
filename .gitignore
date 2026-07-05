@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — ignora todos os .env, MAS versiona o exemplo (sem segredos)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,6 +43,10 @@ next-env.d.ts
 
 # dados de runtime (respostas dos clientes)
 /data/
+
+# supabase — cache local do CLI
+supabase/.temp/
+supabase/.branches/
 
 # assets originais não usados em produção
 /public/logo.tif

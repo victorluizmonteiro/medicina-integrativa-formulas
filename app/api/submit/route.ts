@@ -1,72 +1,145 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
 import { Resend } from "resend";
-import { calcularFormula, obterResultado } from "@/lib/scoring";
+import { supabaseAdmin } from "@/lib/supabase";
+import { getPerguntas } from "@/lib/data";
+import { calcularResultado, obterResultado } from "@/lib/scoring";
 import { gerarPDFBuffer } from "@/lib/generate-pdf";
-import { RespostaFormulario } from "@/lib/types";
-
-const DATA_FILE = path.join(process.cwd(), "data", "responses.json");
-
-
-async function lerRespostas(): Promise<RespostaFormulario[]> {
-  try {
-    const conteudo = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(conteudo);
-  } catch {
-    return [];
-  }
-}
-
-async function salvarResposta(resposta: RespostaFormulario) {
-  const respostas = await lerRespostas();
-  respostas.push(resposta);
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(respostas, null, 2));
-}
+import { limiterSubmit, dentroDoLimite, getIp } from "@/lib/ratelimit";
+import { verificarTurnstile } from "@/lib/turnstile";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getIp(req);
+
+    // Rate limiting por IP
+    if (!(await dentroDoLimite(limiterSubmit, ip))) {
+      return NextResponse.json(
+        { erro: "Muitas tentativas. Aguarde alguns minutos e tente novamente." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
-    const { cliente, respostas } = body;
+    const { cliente, respostas, turnstileToken } = body as {
+      turnstileToken?: string;
+      cliente: {
+        nome: string;
+        cpf: string;
+        email?: string;
+        telefone?: string;
+        idade?: string;
+        consentimento?: boolean;
+        cep?: string;
+        endereco?: string;
+        numero?: string;
+        complemento?: string;
+        cidade?: string;
+        estado?: string;
+      };
+      respostas: Record<string, number>;
+    };
 
     if (!cliente?.nome || !cliente?.cpf) {
       return NextResponse.json({ erro: "Nome e CPF são obrigatórios" }, { status: 400 });
     }
 
-    if (!respostas || Object.keys(respostas).length !== 30) {
-      return NextResponse.json({ erro: "Todas as 30 questões devem ser respondidas" }, { status: 400 });
+    // Verificação anti-bot (Cloudflare Turnstile)
+    if (!(await verificarTurnstile(turnstileToken, ip))) {
+      return NextResponse.json(
+        { erro: "Verificação de segurança falhou. Recarregue a página e tente novamente." },
+        { status: 400 }
+      );
     }
 
-    const pontuacaoTotal = Object.values(respostas as Record<string, number>).reduce(
-      (acc, val) => acc + val,
-      0
+    // ── Carrega as perguntas e valida a completude ──────────────
+    const perguntas = await getPerguntas();
+
+    const faltando = perguntas.filter(
+      (p) => respostas?.[p.id] === undefined && respostas?.[String(p.id)] === undefined
     );
+    if (faltando.length > 0) {
+      return NextResponse.json(
+        { erro: "Todas as perguntas devem ser respondidas" },
+        { status: 400 }
+      );
+    }
 
-    const formula = calcularFormula(pontuacaoTotal);
-    const resultado = obterResultado(formula, pontuacaoTotal);
+    // ── Pontuação (base 100, vencedor por proporção) ────────────
+    const { formula, perfilId, pontos } = calcularResultado(perguntas, respostas);
 
-    const registro: RespostaFormulario = {
-      cliente,
-      respostas,
-      pontuacaoTotal,
-      formula,
-      dataHora: new Date().toISOString(),
-    };
+    // ── Persiste: cliente → avaliação → respostas ───────────────
+    const idadeNum = cliente.idade ? parseInt(cliente.idade, 10) : null;
 
-    // Persiste localmente quando possível (dev). Em produção serverless o
-    // filesystem é efêmero — a falha aqui não deve impedir a resposta.
-    salvarResposta(registro).catch((err) =>
-      console.warn("Não foi possível salvar resposta em disco:", err)
-    );
+    const { data: clienteRow, error: clienteErr } = await supabaseAdmin
+      .from("clientes")
+      .upsert(
+        {
+          nome: cliente.nome,
+          cpf: cliente.cpf,
+          email: cliente.email || null,
+          telefone: cliente.telefone || null,
+          idade: Number.isFinite(idadeNum) ? idadeNum : null,
+          consentimento_lgpd: cliente.consentimento ?? false,
+          cep: cliente.cep || null,
+          endereco: cliente.endereco || null,
+          numero: cliente.numero || null,
+          complemento: cliente.complemento || null,
+          cidade: cliente.cidade || null,
+          estado: cliente.estado || null,
+        },
+        { onConflict: "cpf" }
+      )
+      .select("id")
+      .single();
 
-    // ── ENVIO DE E-MAIL ──────────────────────────────────────────
+    if (clienteErr || !clienteRow) {
+      console.error("Erro ao salvar cliente:", clienteErr);
+      return NextResponse.json({ erro: "Erro ao salvar dados do cliente" }, { status: 500 });
+    }
+
+    const { data: avaliacaoRow, error: avaliacaoErr } = await supabaseAdmin
+      .from("avaliacoes")
+      .insert({
+        cliente_id: clienteRow.id,
+        perfil_id: perfilId,
+        pontuacao_total: pontos,
+      })
+      .select("id")
+      .single();
+
+    if (avaliacaoErr || !avaliacaoRow) {
+      console.error("Erro ao salvar avaliação:", avaliacaoErr);
+      return NextResponse.json({ erro: "Erro ao salvar avaliação" }, { status: 500 });
+    }
+
+    // Preço da fórmula (para exibir na tela de resultado)
+    const { data: perfilRow } = await supabaseAdmin
+      .from("perfis")
+      .select("preco_centavos")
+      .eq("id", perfilId)
+      .single();
+    const precoCentavos = perfilRow?.preco_centavos ?? 0;
+
+    const linhasResp = perguntas.map((p) => ({
+      avaliacao_id: avaliacaoRow.id,
+      pergunta_id: p.id,
+      valor: Number(respostas[p.id] ?? respostas[String(p.id)]),
+    }));
+
+    const { error: respErr } = await supabaseAdmin.from("respostas").insert(linhasResp);
+    if (respErr) {
+      // não impede a resposta ao cliente, mas registra
+      console.error("Erro ao salvar respostas:", respErr);
+    }
+
+    // ── Envio de e-mail (opcional) ──────────────────────────────
+    const resultado = obterResultado(formula, pontos);
     let emailOk: boolean | null = null;
 
     if (cliente.email) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontuacaoTotal);
+        const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontos);
 
         await resend.emails.send({
           from: "Vívea Saúde Natural <onboarding@resend.dev>",
@@ -81,14 +154,12 @@ export async function POST(req: NextRequest) {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:32px 16px;">
     <tr><td align="center">
       <table width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
-        <!-- Cabeçalho -->
         <tr>
           <td style="background:linear-gradient(135deg,#1A2E22,#4A7C59);padding:28px 32px;text-align:center;">
             <p style="margin:0;color:#ffffff;font-size:24px;font-weight:900;letter-spacing:2px;font-family:Georgia,serif;">VÍVEA</p>
             <p style="margin:6px 0 0;color:#9ABFA8;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Saúde Natural</p>
           </td>
         </tr>
-        <!-- Saudação -->
         <tr>
           <td style="padding:28px 32px 16px;">
             <p style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">Olá, ${cliente.nome.split(" ")[0]}!</p>
@@ -97,7 +168,6 @@ export async function POST(req: NextRequest) {
             </p>
           </td>
         </tr>
-        <!-- Fórmula -->
         <tr>
           <td style="padding:0 32px 24px;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
@@ -112,14 +182,12 @@ export async function POST(req: NextRequest) {
             </table>
           </td>
         </tr>
-        <!-- Pontuação -->
         <tr>
           <td style="padding:0 32px 24px;">
             <p style="margin:0 0 6px;color:#94a3b8;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Pontuação Obtida</p>
-            <p style="margin:0;color:#0f172a;font-size:14px;"><strong>${pontuacaoTotal}</strong> <span style="color:#94a3b8;">/ 90 pontos</span></p>
+            <p style="margin:0;color:#0f172a;font-size:14px;"><strong>${pontos}</strong> <span style="color:#94a3b8;">/ 100 pontos</span></p>
           </td>
         </tr>
-        <!-- Aviso PDF -->
         <tr>
           <td style="padding:0 32px 28px;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;">
@@ -133,7 +201,6 @@ export async function POST(req: NextRequest) {
             </table>
           </td>
         </tr>
-        <!-- Rodapé -->
         <tr>
           <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 32px;text-align:center;">
             <p style="margin:0 0 4px;color:#94a3b8;font-size:11px;">Osteopatia Alphaville — Dr. Thiago Possemozer Senra</p>
@@ -148,7 +215,7 @@ export async function POST(req: NextRequest) {
           `.trim(),
           attachments: [
             {
-              filename: `prescricao-mental-abc-${formula}.pdf`,
+              filename: `prescricao-vivea-${formula}.pdf`,
               content: pdfBuffer,
             },
           ],
@@ -161,7 +228,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ formula, pontuacaoTotal, cliente, emailOk });
+    return NextResponse.json({
+      formula,
+      pontuacaoTotal: pontos,
+      avaliacaoId: avaliacaoRow.id,
+      precoCentavos,
+      cliente: { nome: cliente.nome, cpf: cliente.cpf },
+      emailOk,
+    });
   } catch (err) {
     console.error("Erro ao processar formulário:", err);
     return NextResponse.json({ erro: "Erro interno do servidor" }, { status: 500 });

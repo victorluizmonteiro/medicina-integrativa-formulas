@@ -1,9 +1,83 @@
 import { Formula, ResultadoFormula } from "./types";
 
-export function calcularFormula(pontuacaoTotal: number): Formula {
-  if (pontuacaoTotal >= 18) return "B";
-  if (pontuacaoTotal >= 10) return "C";
-  return "A";
+/** Mapeia o perfil do banco (1,2,3) para a letra de apresentação (A,B,C). */
+export const PERFIL_PARA_FORMULA: Record<number, Formula> = {
+  1: "A",
+  2: "B",
+  3: "C",
+};
+
+/** Metadados de pergunta necessários para pontuar. */
+export interface PerguntaScoring {
+  id: number;
+  perfil_id: number;
+  peso_sentinela: number; // 0 = não sentinela
+}
+
+export interface PontuacaoPerfil {
+  perfilId: number;
+  formula: Formula;
+  bruto: number; // pontos absolutos (com bônus de sentinela)
+  teto: number; // máximo possível do perfil
+  base100: number; // bruto normalizado para 0–100
+}
+
+export interface ResultadoCalculo {
+  formula: Formula; // perfil vencedor (letra)
+  perfilId: number; // perfil vencedor (id)
+  pontos: number; // base-100 do vencedor (0–100, arredondado)
+  detalhes: PontuacaoPerfil[];
+}
+
+/**
+ * Calcula a pontuação de cada perfil e retorna o vencedor.
+ *
+ * Regras:
+ *  - cada resposta vale de 0 a 3;
+ *  - perguntas sentinela somam `peso_sentinela` a mais, mas SÓ quando a
+ *    resposta for > 0;
+ *  - cada perfil é normalizado para uma base comum de 100 pontos
+ *    (bruto ÷ teto × 100), para os três competirem em pé de igualdade
+ *    independentemente da quantidade de perguntas e dos pesos;
+ *  - vence o perfil com maior valor na base 100.
+ */
+export function calcularResultado(
+  perguntas: PerguntaScoring[],
+  respostas: Record<string | number, number>
+): ResultadoCalculo {
+  const porPerfil = new Map<number, { bruto: number; teto: number }>();
+
+  for (const p of perguntas) {
+    const valor = Number(respostas[p.id] ?? respostas[String(p.id)] ?? 0);
+    const bonus = valor > 0 ? p.peso_sentinela : 0;
+    const tetoPergunta = 3 + p.peso_sentinela; // valor máx (3) já ativa o bônus
+
+    const acc = porPerfil.get(p.perfil_id) ?? { bruto: 0, teto: 0 };
+    acc.bruto += valor + bonus;
+    acc.teto += tetoPergunta;
+    porPerfil.set(p.perfil_id, acc);
+  }
+
+  const detalhes: PontuacaoPerfil[] = [...porPerfil.entries()].map(
+    ([perfilId, { bruto, teto }]) => ({
+      perfilId,
+      formula: PERFIL_PARA_FORMULA[perfilId],
+      bruto,
+      teto,
+      base100: teto > 0 ? (bruto / teto) * 100 : 0,
+    })
+  );
+
+  const vencedor = detalhes.reduce((melhor, atual) =>
+    atual.base100 > melhor.base100 ? atual : melhor
+  );
+
+  return {
+    formula: vencedor.formula,
+    perfilId: vencedor.perfilId,
+    pontos: Math.round(vencedor.base100),
+    detalhes,
+  };
 }
 
 export function obterResultado(formula: Formula, pontuacao: number): ResultadoFormula {

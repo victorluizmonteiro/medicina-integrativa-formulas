@@ -27,17 +27,27 @@ const SESSION_KEY = "vivea_resultado";
 interface Sessao {
   formula: Formula;
   pontos: number;
+  avaliacaoId: string;
+  precoCentavos: number;
   nome: string;
   cpf: string;
   emailOk: boolean | null;
 }
 
-const WHATSAPP_FARMACIA = "5519996557376";
+/** Formata centavos em reais (R$ 149,90). */
+function formatarReais(centavos: number) {
+  return (centavos / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
 export default function ResultadoPage() {
   const [sessao, setSessao]         = useState<Sessao | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [visivel, setVisivel]       = useState(false);
+  const [pagando, setPagando]       = useState(false);
+  const [erroPagamento, setErroPagamento] = useState("");
 
   /* Lê os dados da sessão ao montar */
   useEffect(() => {
@@ -93,7 +103,7 @@ export default function ResultadoPage() {
     );
   }
 
-  const { formula, pontos, nome, cpf } = sessao;
+  const { formula, pontos, nome, cpf, avaliacaoId, precoCentavos } = sessao;
   const resultado = obterResultado(formula, pontos);
 
   /* Cores por fórmula */
@@ -101,14 +111,22 @@ export default function ResultadoPage() {
   const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
   const corLight = formula === "A" ? "#d4857f"  : formula === "B" ? "#d4955e"  : "#6B9E7A";
 
-  const contatarFarmacia = () => {
-    const texto = encodeURIComponent(
-      `Olá! Realizei a avaliação VÍVEA.\n\n` +
-      `*Resultado:* ${resultado.nome} — ${resultado.subtitulo}\n` +
-      `*Paciente:* ${nome}\n\n` +
-      `Gostaria de obter mais informações sobre a formulação indicada.`
-    );
-    window.open(`https://wa.me/${WHATSAPP_FARMACIA}?text=${texto}`, "_blank");
+  const iniciarPagamento = async () => {
+    setPagando(true);
+    setErroPagamento("");
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avaliacaoId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.erro || "Não foi possível iniciar o pagamento");
+      window.location.href = data.url; // redireciona ao checkout do Stripe
+    } catch (e: unknown) {
+      setErroPagamento(e instanceof Error ? e.message : "Erro ao iniciar o pagamento");
+      setPagando(false);
+    }
   };
 
   return (
@@ -243,10 +261,10 @@ export default function ResultadoPage() {
                   }}
                 >
                   <span style={{ fontWeight: 700, color: cor, fontSize: "0.9rem", fontFamily: "var(--font-dm-sans)" }}>{pontos} pts</span>
-                  <span style={{ color: "#aaa", fontSize: "0.75rem", fontFamily: "var(--font-dm-sans)" }}>/ 90</span>
+                  <span style={{ color: "#aaa", fontSize: "0.75rem", fontFamily: "var(--font-dm-sans)" }}>/ 100</span>
                 </div>
                 <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "var(--font-dm-sans)" }}>
-                  {pontos < 10 ? "Perfil de baixa intensidade" : pontos < 18 ? "Perfil moderado" : "Perfil dominante"}
+                  {pontos < 40 ? "Perfil de baixa intensidade" : pontos < 70 ? "Perfil moderado" : "Perfil dominante"}
                 </span>
               </div>
 
@@ -255,7 +273,7 @@ export default function ResultadoPage() {
                 <div
                   style={{
                     height: "100%",
-                    width: `${Math.min((pontos / 90) * 100, 100)}%`,
+                    width: `${Math.min(pontos, 100)}%`,
                     background: `linear-gradient(90deg, ${cor}, ${corLight})`,
                     borderRadius: 999,
                     transition: "width 1s ease",
@@ -325,7 +343,7 @@ export default function ResultadoPage() {
                         lineHeight: 1.4,
                       }}
                     >
-                      Prescrição enviada à farmácia parceira
+                      Finalize seu pedido
                     </p>
                     <p
                       style={{
@@ -336,19 +354,56 @@ export default function ResultadoPage() {
                         lineHeight: 1.6,
                       }}
                     >
-                      Sua fórmula{" "}
+                      Pague sua fórmula{" "}
                       <strong style={{ color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>
                         {resultado.nome}
                       </strong>{" "}
-                      foi encaminhada para a farmácia de manipulação parceira.
-                      Entre em contato pelo WhatsApp abaixo para adquiri-la.
+                      com cartão de crédito. Assim que o pagamento for confirmado, a
+                      farmácia de manipulação parceira dará andamento e entregará no
+                      endereço informado.
                     </p>
                   </div>
                 </div>
 
-                {/* Botão WhatsApp dentro do card escuro */}
+                {/* Valor da fórmula — destaque */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 14,
+                    padding: "16px 20px",
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontSize: "0.65rem", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", fontFamily: "var(--font-dm-sans)" }}>
+                      Valor da fórmula
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-dm-sans)" }}>
+                      Pagamento único
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-playfair)",
+                        fontSize: "clamp(1.7rem, 6vw, 2.1rem)",
+                        fontWeight: 900,
+                        color: "#fff",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {precoCentavos > 0 ? formatarReais(precoCentavos) : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Botão de pagamento (Stripe) */}
                 <button
-                  onClick={contatarFarmacia}
+                  onClick={iniciarPagamento}
+                  disabled={pagando}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -358,23 +413,38 @@ export default function ResultadoPage() {
                     padding: "15px 24px",
                     borderRadius: 12,
                     border: "none",
-                    cursor: "pointer",
+                    cursor: pagando ? "wait" : "pointer",
                     fontFamily: "var(--font-dm-sans)",
                     fontSize: "1rem",
                     fontWeight: 500,
                     color: "#fff",
-                    background: "#25D366",
+                    background: cor,
+                    opacity: pagando ? 0.7 : 1,
                     transition: "opacity 0.2s",
-                    boxShadow: "0 4px 16px rgba(37,211,102,0.4)",
+                    boxShadow: `0 4px 16px ${cor}55`,
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
-                  <svg style={{ width: 20, height: 20 }} viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                  Falar com a Farmácia Parceira
+                  {pagando ? "Redirecionando…" : `Pagar ${precoCentavos > 0 ? formatarReais(precoCentavos) : "agora"} com cartão`}
                 </button>
+
+                {erroPagamento && (
+                  <p style={{ color: "#fca5a5", fontSize: "0.8rem", fontFamily: "var(--font-dm-sans)", textAlign: "center", margin: 0 }}>
+                    {erroPagamento}
+                  </p>
+                )}
+
+                {/* Textos legais */}
+                <p style={{ margin: 0, fontSize: "0.68rem", lineHeight: 1.6, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-dm-sans)", textAlign: "center" }}>
+                  🔒 Pagamento processado com segurança pela Stripe. Não
+                  armazenamos os dados do seu cartão.
+                </p>
+                <p style={{ margin: 0, fontSize: "0.62rem", lineHeight: 1.6, color: "rgba(255,255,255,0.38)", fontFamily: "var(--font-dm-sans)", textAlign: "center" }}>
+                  Ao concluir o pagamento, você concorda com os termos de uso e a
+                  política de privacidade. A prescrição resulta de avaliação de
+                  perfil e não substitui consulta com profissional de saúde
+                  habilitado. Valor referente à formulação indicada; prazo e frete
+                  de entrega combinados com a farmácia parceira.
+                </p>
               </div>
 
               <a

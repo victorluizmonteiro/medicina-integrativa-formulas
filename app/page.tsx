@@ -1,4 +1,5 @@
 import QuestionnaireForm from "@/components/QuestionnaireForm";
+import { getPerguntas } from "@/lib/data";
 
 /* ── Logo VÍVEA — SVG inline ── */
 function ViveaLogo({ dark = false }: { dark?: boolean }) {
@@ -62,7 +63,9 @@ const formulas = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const perguntas = await getPerguntas();
+
   return (
     <main style={{ background: "var(--vivea-cream)", minHeight: "100vh", overflowX: "hidden" }}>
 
@@ -425,7 +428,7 @@ export default function Home() {
                 fontFamily: "var(--font-dm-sans)",
               }}
             >
-              Responda as 30 questões abaixo com base nos últimos 3 a 6 meses.
+              Responda as {perguntas.length} questões abaixo com base nos últimos 3 a 6 meses.
             </p>
           </div>
 
@@ -438,7 +441,7 @@ export default function Home() {
               border: "1px solid rgba(74,124,89,0.12)",
             }}
           >
-            <QuestionnaireForm />
+            <QuestionnaireForm perguntas={perguntas} />
           </div>
 
           <p

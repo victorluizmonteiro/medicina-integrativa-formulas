@@ -12,6 +12,12 @@ export interface DadosCliente {
   idade: string;
   telefone: string;
   email: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  cidade: string;
+  estado: string;
 }
 
 export interface RespostaFormulario {

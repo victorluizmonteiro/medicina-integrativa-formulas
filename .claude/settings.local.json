@@ -35,7 +35,8 @@
       "Bash(curl -s \"http://localhost:3000/resultado?formula=B&pontos=35&nome=Jo%C3%A3o+Silva&cpf=123.456.789-00\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(cd /Users/victormonteiro/Documents/projetos/sistema-formulas/medicina-integrativa-formulas 2>/dev/null || cd /Users/victormonteiro/Documents/Projetos-Trabalho/medicina-integrativa-formulas/medicina-integrativa-formulas; echo \"=== next.config ===\"; cat next.config.ts; echo \"=== env files ===\"; ls -la | grep -i env; echo \"=== .gitignore ===\"; cat .gitignore 2>/dev/null; echo \"=== README ===\"; head -40 README.md)"
     ]
   }
 }

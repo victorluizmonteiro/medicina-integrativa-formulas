@@ -108,12 +108,12 @@ export function gerarDocPDF(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(148, 163, 184);
-  doc.text("/ 90 pontos", 14 + doc.getTextWidth(`${pontos}`) + 2, yAposDes + 9);
+  doc.text("/ 100 pontos", 14 + doc.getTextWidth(`${pontos}`) + 2, yAposDes + 9);
 
   const yBarra = yAposDes + 13;
   doc.setFillColor(241, 245, 249);
   doc.roundedRect(14, yBarra, 182, 3, 1.5, 1.5, "F");
-  const larguraBarra = Math.min((pontos / 90) * 182, 182);
+  const larguraBarra = Math.min((pontos / 100) * 182, 182);
   doc.setFillColor(...corFormula);
   doc.roundedRect(14, yBarra, larguraBarra, 3, 1.5, 1.5, "F");
 
