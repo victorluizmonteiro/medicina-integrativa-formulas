@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Política de Privacidade — Vívea Saúde Natural",
+  title: "Política de Privacidade — Vitalyx Health",
 };
 
 export default function PoliticaPrivacidade() {

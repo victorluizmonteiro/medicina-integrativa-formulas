@@ -3,22 +3,7 @@
 import { useEffect, useState } from "react";
 import { obterResultado } from "@/lib/scoring";
 import type { Formula } from "@/lib/types";
-
-/* ── Logo VÍVEA — inline SVG ── */
-function ViveaLogo() {
-  return (
-    <svg width="130" height="32" viewBox="0 0 180 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Vívea" role="img">
-      <path d="M4 6 L17 36" stroke="#1A2E22" strokeWidth="3.2" strokeLinecap="round" />
-      <path d="M30 6 L17 36" stroke="#1A2E22" strokeWidth="3.2" strokeLinecap="round" />
-      <ellipse cx="5" cy="4" rx="4.5" ry="8" fill="#4A7C59" transform="rotate(-18 5 4)" />
-      <line x1="5" y1="8" x2="8" y2="-3" stroke="#E8F0EA" strokeWidth="0.9" strokeLinecap="round" />
-      <text x="42" y="30" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "26px", fontWeight: 700, fill: "#1A2E22", letterSpacing: "1.5px" }}>VÍVEA</text>
-      <line x1="144" y1="10" x2="144" y2="36" stroke="#4A7C59" strokeWidth="0.7" opacity="0.5" />
-      <text x="152" y="21" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: "#4A7C59", letterSpacing: "2px" }}>SAÚDE</text>
-      <text x="152" y="32" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: "#4A7C59", letterSpacing: "2px" }}>NATURAL</text>
-    </svg>
-  );
-}
+import BrandLogo from "@/components/BrandLogo";
 
 /* ── Chave do sessionStorage ── */
 const SESSION_KEY = "vivea_resultado";
@@ -68,7 +53,7 @@ export default function ResultadoPage() {
     return (
       <main style={{ minHeight: "100vh", background: "var(--vivea-cream)", display: "flex", flexDirection: "column" }}>
         <header style={{ background: "rgba(247,243,238,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(74,124,89,0.12)", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <ViveaLogo />
+          <BrandLogo width={130} />
         </header>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 16px", textAlign: "center" }}>
           <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>🍃</div>
@@ -151,7 +136,7 @@ export default function ResultadoPage() {
             justifyContent: "space-between",
           }}
         >
-          <ViveaLogo />
+          <BrandLogo width={130} />
           <span
             style={{
               fontSize: "0.62rem",
@@ -439,11 +424,18 @@ export default function ResultadoPage() {
                   armazenamos os dados do seu cartão.
                 </p>
                 <p style={{ margin: 0, fontSize: "0.62rem", lineHeight: 1.6, color: "rgba(255,255,255,0.38)", fontFamily: "var(--font-dm-sans)", textAlign: "center" }}>
-                  Ao concluir o pagamento, você concorda com os termos de uso e a
-                  política de privacidade. A prescrição resulta de avaliação de
-                  perfil e não substitui consulta com profissional de saúde
-                  habilitado. Valor referente à formulação indicada; prazo e frete
-                  de entrega combinados com a farmácia parceira.
+                  Ao concluir o pagamento, você concorda com os{" "}
+                  <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.7)", textDecoration: "underline" }}>
+                    termos de uso
+                  </a>{" "}
+                  e a{" "}
+                  <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.7)", textDecoration: "underline" }}>
+                    política de privacidade
+                  </a>
+                  . A prescrição resulta de avaliação de perfil e não substitui
+                  consulta com profissional de saúde habilitado. Valor referente à
+                  formulação indicada; prazo e frete de entrega combinados com a
+                  farmácia parceira.
                 </p>
               </div>
 

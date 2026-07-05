@@ -16,9 +16,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "VÍVEA — Descubra sua Fórmula Natural",
+  title: "Vitalyx Health — Descubra sua Fórmula Personalizada",
   description:
-    "Responda 30 questões e receba uma prescrição personalizada baseada no seu perfil. Três fórmulas naturais para três perfis distintos.",
+    "Responda ao questionário e receba uma prescrição personalizada baseada no seu perfil. Ciência que revela, saúde que transforma.",
 };
 
 export default function RootLayout({

@@ -24,3 +24,62 @@ export async function getPerguntas(): Promise<PerguntaDB[]> {
   if (error) throw new Error(`Erro ao carregar perguntas: ${error.message}`);
   return data ?? [];
 }
+
+/** Um composto de uma fórmula. */
+export interface CompostoDB {
+  composto: string;
+  quantidade: number;
+  unidade: string;
+  observacao: string | null;
+}
+
+/** Uma fórmula do perfil, com seus compostos. */
+export interface FormulaComComposicao {
+  nome: string;
+  forma_farmaceutica: string | null;
+  posologia: string | null;
+  composicoes: CompostoDB[];
+}
+
+interface CompostoRow {
+  composto: string;
+  quantidade: number | string;
+  unidade: string;
+  ordem: number;
+  observacao: string | null;
+  habilitado: boolean;
+}
+
+/**
+ * Carrega as fórmulas (habilitadas) de um perfil com seus compostos,
+ * ordenados. Uso exclusivo em servidor.
+ */
+export async function getFormulasComComposicao(
+  perfilId: number
+): Promise<FormulaComComposicao[]> {
+  const { data, error } = await supabaseAdmin
+    .from("formulas")
+    .select(
+      "nome, forma_farmaceutica, posologia, ordem, habilitado, composicoes ( composto, quantidade, unidade, ordem, observacao, habilitado )"
+    )
+    .eq("perfil_id", perfilId)
+    .eq("habilitado", true)
+    .order("ordem", { ascending: true });
+
+  if (error) throw new Error(`Erro ao carregar fórmulas: ${error.message}`);
+
+  return (data ?? []).map((f) => ({
+    nome: f.nome,
+    forma_farmaceutica: f.forma_farmaceutica,
+    posologia: f.posologia,
+    composicoes: ((f.composicoes ?? []) as CompostoRow[])
+      .filter((c) => c.habilitado)
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((c) => ({
+        composto: c.composto,
+        quantidade: Number(c.quantidade),
+        unidade: c.unidade,
+        observacao: c.observacao,
+      })),
+  }));
+}

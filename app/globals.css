@@ -4,14 +4,14 @@
   --font-playfair: "Playfair Display", Georgia, serif;
   --font-dm-sans:  "DM Sans", system-ui, sans-serif;
 
-  /* ── Paleta VÍVEA ── */
-  --vivea-dark:       #1A2E22;
-  --vivea-sage:       #4A7C59;
-  --vivea-sage-light: #6B9E7A;
-  --vivea-sage-pale:  #E8F0EA;
-  --vivea-cream:      #F7F3EE;
-  --vivea-amber:      #C8763A;
-  --vivea-red:        #C46060;
+  /* ── Paleta Vitalyx Health ── */
+  --vivea-dark:       #0A1D34; /* navy */
+  --vivea-sage:       #0E8C8C; /* teal (accent principal) */
+  --vivea-sage-light: #4FC3BC; /* teal claro */
+  --vivea-sage-pale:  #E1F1F0; /* teal muito claro (fundos) */
+  --vivea-cream:      #F2F6F8; /* off-white frio */
+  --vivea-amber:      #5F8C1B; /* verde-lima (accent secundário) */
+  --vivea-red:        #C46060; /* cor do perfil CALM·A (produto) */
 }
 
 * {
@@ -47,6 +47,6 @@ body {
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar       { width: 6px; }
-::-webkit-scrollbar-track { background: #ede9e2; }
-::-webkit-scrollbar-thumb { background: #b0c4b8; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #e4ebee; }
+::-webkit-scrollbar-thumb { background: #9db9bd; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--vivea-sage); }

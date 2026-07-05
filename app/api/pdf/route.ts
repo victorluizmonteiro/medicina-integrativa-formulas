@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { gerarPDFBuffer } from "@/lib/generate-pdf";
+import { getFormulasComComposicao } from "@/lib/data";
+import { FORMULA_PARA_PERFIL } from "@/lib/scoring";
 import type { Formula } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -27,7 +29,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const pdfBuffer = gerarPDFBuffer(nome, cpf, formula, pontos);
+    const formulasComp = await getFormulasComComposicao(FORMULA_PARA_PERFIL[formula]);
+    const pdfBuffer = gerarPDFBuffer(nome, cpf, formula, pontos, formulasComp);
     // NextResponse aceita Uint8Array (não Buffer diretamente)
     const pdfBytes = new Uint8Array(pdfBuffer);
 
@@ -35,7 +38,7 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="prescricao-vivea-${formula}.pdf"`,
+        "Content-Disposition": `attachment; filename="prescricao-vitalyx-${formula}.pdf"`,
         "Content-Length": String(pdfBytes.byteLength),
         // Impede cache do PDF no navegador/CDN
         "Cache-Control": "no-store",

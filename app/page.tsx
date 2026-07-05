@@ -1,36 +1,6 @@
 import QuestionnaireForm from "@/components/QuestionnaireForm";
 import { getPerguntas } from "@/lib/data";
-
-/* ── Logo VÍVEA — SVG inline ── */
-function ViveaLogo({ dark = false }: { dark?: boolean }) {
-  const textColor = dark ? "#F7F3EE" : "#1A2E22";
-  const leafColor = dark ? "#6B9E7A" : "#4A7C59";
-  const leafVein  = dark ? "#1A2E22" : "#E8F0EA";
-  const divider   = dark ? "#6B9E7A" : "#4A7C59";
-  const tagColor  = dark ? "#9ABFA8" : "#4A7C59";
-
-  return (
-    <svg
-      width="160" height="40"
-      viewBox="0 0 180 44"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="Vívea — Saúde Natural"
-      role="img"
-    >
-      <path d="M4 6 L17 36" stroke={textColor} strokeWidth="3.2" strokeLinecap="round" />
-      <path d="M30 6 L17 36" stroke={textColor} strokeWidth="3.2" strokeLinecap="round" />
-      <ellipse cx="5" cy="4" rx="4.5" ry="8" fill={leafColor} transform="rotate(-18 5 4)" />
-      <line x1="5" y1="8" x2="8" y2="-3" stroke={leafVein} strokeWidth="0.9" strokeLinecap="round" />
-      <text x="42" y="30" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "26px", fontWeight: 700, fill: textColor, letterSpacing: "1.5px" }}>
-        VÍVEA
-      </text>
-      <line x1="144" y1="10" x2="144" y2="36" stroke={divider} strokeWidth="0.7" opacity="0.5" />
-      <text x="152" y="21" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: tagColor, letterSpacing: "2px" }}>SAÚDE</text>
-      <text x="152" y="32" style={{ fontFamily: "Georgia, serif", fontSize: "8px", fill: tagColor, letterSpacing: "2px" }}>NATURAL</text>
-    </svg>
-  );
-}
+import BrandLogo from "@/components/BrandLogo";
 
 /* ── Cards das fórmulas ── */
 const formulas = [
@@ -91,7 +61,7 @@ export default async function Home() {
             margin: "0 auto",
           }}
         >
-          <ViveaLogo />
+          <BrandLogo />
           <span
             style={{
               fontSize: "0.62rem",
@@ -105,7 +75,7 @@ export default async function Home() {
               fontFamily: "var(--font-dm-sans)",
             }}
           >
-            Fórmulas Naturais
+            Saúde Personalizada
           </span>
         </div>
 
@@ -175,7 +145,7 @@ export default async function Home() {
         >
           {/* Logo centrado no hero */}
           <div className="vh-fadeup-1" style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
-            <ViveaLogo />
+            <BrandLogo />
           </div>
 
           {/* Eyebrow */}
@@ -348,43 +318,77 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── TRUST STRIP ─────────────────────────────────────────── */}
+      {/* ── PILARES ─────────────────────────────────────────────── */}
       <div style={{ background: "var(--vivea-dark)" }}>
         <style>{`
-          .trust-strip-inner { display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin: 0 auto; width: 100%; padding: 28px 24px; }
-          @media (min-width: 640px) { .trust-strip-inner { flex-direction: row; justify-content: center; gap: 40px; padding: 32px 40px; } }
+          .pilares-wrap { max-width: 960px; margin: 0 auto; padding: 34px 20px; }
+          .pilares-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px 12px; }
+          .pilar { flex: 0 0 96px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+          .pilar-ico { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(154,191,168,0.10); border: 1px solid rgba(154,191,168,0.32); color: #9ABFA8; }
+          .pilar-txt { font-size: 0.72rem; line-height: 1.35; font-weight: 500; letter-spacing: 0.4px; color: rgba(255,255,255,0.82); font-family: var(--font-dm-sans); }
+          @media (min-width: 640px) { .pilar { flex: 0 0 150px; } .pilar-ico { width: 60px; height: 60px; } .pilar-txt { font-size: 0.78rem; } }
         `}</style>
-        <div className="trust-strip-inner">
-          {[
-            { icon: "🌿", title: "Base fisiológica real",  sub: "Não apenas alívio de sintomas" },
-            { icon: "🎯", title: "Fórmula personalizada",  sub: "Direcionada para o seu perfil" },
-            { icon: "📋", title: "Questionário clínico",   sub: "Critérios baseados em fisiologia" },
-          ].map((item) => (
-            <div key={item.title} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div
-                style={{
-                  width: 36, height: 36,
-                  background: "rgba(255,255,255,0.08)",
-                  borderRadius: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "1rem",
-                  flexShrink: 0,
-                }}
-              >
-                {item.icon}
-              </div>
-              <div>
-                <strong style={{ display: "block", color: "#fff", fontWeight: 500, fontSize: "0.88rem", fontFamily: "var(--font-dm-sans)" }}>
-                  {item.title}
-                </strong>
-                <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", fontWeight: 300, fontFamily: "var(--font-dm-sans)" }}>
-                  {item.sub}
+        <div className="pilares-wrap">
+          <div className="pilares-grid">
+            {[
+              {
+                txt: ["Saúde", "Integrativa"],
+                ico: (
+                  <path d="M4 20C3 14 6 5 20 4c0 12-8 15-14 14M9 15c2-3 5-5 8-6" />
+                ),
+              },
+              {
+                txt: ["Ciência e", "Tecnologia"],
+                ico: (
+                  <>
+                    <path d="M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9" />
+                    <path d="M9 6h6M8.5 9.5h7M8.5 14.5h7M9 18h6" />
+                  </>
+                ),
+              },
+              {
+                txt: ["Foco no", "Indivíduo"],
+                ico: (
+                  <>
+                    <circle cx="12" cy="5" r="2" />
+                    <path d="M12 8v6M12 14l-3.5 5M12 14l3.5 5M12 10l-5-2.5M12 10l5-2.5" />
+                  </>
+                ),
+              },
+              {
+                txt: ["Mente, Corpo", "e Emoção"],
+                ico: (
+                  <>
+                    <path d="M12 6a2.5 2.5 0 0 0-4.9.6A2.5 2.5 0 0 0 5.6 11a2.4 2.4 0 0 0 1.7 3.8A2.3 2.3 0 0 0 12 15.5z" />
+                    <path d="M12 6a2.5 2.5 0 0 1 4.9.6A2.5 2.5 0 0 1 18.4 11a2.4 2.4 0 0 1-1.7 3.8A2.3 2.3 0 0 1 12 15.5z" />
+                    <path d="M12 6v9.5" />
+                  </>
+                ),
+              },
+              {
+                txt: ["Equilíbrio e", "Longevidade"],
+                ico: (
+                  <>
+                    <path d="M12 20c-4 0-7-2.4-8-5.8 2.6-.5 4.7.6 6 2.6M12 20c4 0 7-2.4 8-5.8-2.6-.5-4.7.6-6 2.6" />
+                    <path d="M12 20c-2-2-3-4.6-3-8 0 0 3 2 3 8M12 20c2-2 3-4.6 3-8 0 0-3 2-3 8" />
+                  </>
+                ),
+              },
+            ].map((p) => (
+              <div className="pilar" key={p.txt.join(" ")}>
+                <div className="pilar-ico">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {p.ico}
+                  </svg>
+                </div>
+                <span className="pilar-txt">
+                  {p.txt[0]}
+                  <br />
+                  {p.txt[1]}
                 </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 

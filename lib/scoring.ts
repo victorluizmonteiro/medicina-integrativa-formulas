@@ -7,6 +7,13 @@ export const PERFIL_PARA_FORMULA: Record<number, Formula> = {
   3: "C",
 };
 
+/** Inverso: letra (A,B,C) → perfil do banco (1,2,3). */
+export const FORMULA_PARA_PERFIL: Record<Formula, number> = {
+  A: 1,
+  B: 2,
+  C: 3,
+};
+
 /** Metadados de pergunta necessários para pontuar. */
 export interface PerguntaScoring {
   id: number;

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase";
-import { getPerguntas } from "@/lib/data";
+import { getPerguntas, getFormulasComComposicao } from "@/lib/data";
 import { calcularResultado, obterResultado } from "@/lib/scoring";
 import { gerarPDFBuffer } from "@/lib/generate-pdf";
 import { limiterSubmit, dentroDoLimite, getIp } from "@/lib/ratelimit";
 import { verificarTurnstile } from "@/lib/turnstile";
+import { submitSchema } from "@/lib/validation";
+import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,29 +21,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { cliente, respostas, turnstileToken } = body as {
-      turnstileToken?: string;
-      cliente: {
-        nome: string;
-        cpf: string;
-        email?: string;
-        telefone?: string;
-        idade?: string;
-        consentimento?: boolean;
-        cep?: string;
-        endereco?: string;
-        numero?: string;
-        complemento?: string;
-        cidade?: string;
-        estado?: string;
-      };
-      respostas: Record<string, number>;
-    };
-
-    if (!cliente?.nome || !cliente?.cpf) {
-      return NextResponse.json({ erro: "Nome e CPF são obrigatórios" }, { status: 400 });
+    // ── Validação de schema (Zod) ───────────────────────────────
+    const parsed = submitSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { erro: parsed.error.issues[0]?.message ?? "Dados inválidos" },
+        { status: 400 }
+      );
     }
+    const { cliente, respostas, turnstileToken } = parsed.data;
 
     // Verificação anti-bot (Cloudflare Turnstile)
     if (!(await verificarTurnstile(turnstileToken, ip))) {
@@ -139,13 +127,14 @@ export async function POST(req: NextRequest) {
     if (cliente.email) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontos);
+        const formulasComp = await getFormulasComComposicao(perfilId);
+        const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontos, formulasComp);
 
         await resend.emails.send({
-          from: "Vívea Saúde Natural <onboarding@resend.dev>",
+          from: "Vitalyx Health <onboarding@resend.dev>",
           replyTo: "victorluiz.monteiro@gmail.com",
           to: [cliente.email],
-          subject: `Sua prescrição Vívea — Fórmula ${resultado.nome}`,
+          subject: `Sua prescrição Vitalyx — Fórmula ${resultado.nome}`,
           html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -155,9 +144,9 @@ export async function POST(req: NextRequest) {
     <tr><td align="center">
       <table width="100%" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
         <tr>
-          <td style="background:linear-gradient(135deg,#1A2E22,#4A7C59);padding:28px 32px;text-align:center;">
-            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:900;letter-spacing:2px;font-family:Georgia,serif;">VÍVEA</p>
-            <p style="margin:6px 0 0;color:#9ABFA8;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Saúde Natural</p>
+          <td style="background:linear-gradient(135deg,#0A1D34,#0E8C8C);padding:28px 32px;text-align:center;">
+            <p style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:1px;font-family:Helvetica,Arial,sans-serif;">vitalyx</p>
+            <p style="margin:6px 0 0;color:#8FD64B;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Health</p>
           </td>
         </tr>
         <tr>
@@ -215,7 +204,7 @@ export async function POST(req: NextRequest) {
           `.trim(),
           attachments: [
             {
-              filename: `prescricao-vivea-${formula}.pdf`,
+              filename: `prescricao-vitalyx-${formula}.pdf`,
               content: pdfBuffer,
             },
           ],
@@ -238,6 +227,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Erro ao processar formulário:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ erro: "Erro interno do servidor" }, { status: 500 });
   }
 }

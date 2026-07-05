@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase";
+import * as Sentry from "@sentry/nextjs";
 
 // Precisa do corpo bruto (raw) para validar a assinatura → runtime Node.
 export const runtime = "nodejs";
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("Erro ao processar evento Stripe:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ erro: "Erro interno" }, { status: 500 });
   }
 

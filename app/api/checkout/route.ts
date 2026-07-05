@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase";
 import { limiterCheckout, dentroDoLimite, getIp } from "@/lib/ratelimit";
+import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,6 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("Erro ao criar checkout:", err);
+    Sentry.captureException(err);
     return NextResponse.json({ erro: "Erro ao iniciar o pagamento" }, { status: 500 });
   }
 }
