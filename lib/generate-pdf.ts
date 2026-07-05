@@ -28,7 +28,7 @@ export function gerarDocPDF(
   });
 
   const corFormula: [number, number, number] =
-    formula === "A" ? [196, 96, 96] : formula === "B" ? [200, 118, 58] : [74, 124, 89];
+    formula === "A" ? [21, 140, 147] : formula === "B" ? [111, 168, 46] : [46, 158, 136];
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   doc.setFillColor(255, 255, 255);

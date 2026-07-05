@@ -6,30 +6,27 @@ import BrandLogo from "@/components/BrandLogo";
 const formulas = [
   {
     key: "calm",
-    tag: "CALM·A",
     icon: "⚡",
     title: "Mente Acelerada",
     desc: "Vive em estado de alerta, pensamentos em loop, não consegue desligar mesmo exausto.",
-    accent: "#C46060",
-    pale: "#FDF0F0",
+    accent: "#158C93",
+    pale: "#E2F1F1",
   },
   {
     key: "vital",
-    tag: "VITAL·B",
     icon: "🌑",
     title: "Sem Energia",
     desc: "Perdeu a motivação, corpo pesado, sem prazer nas coisas simples do dia a dia.",
-    accent: "#C8763A",
-    pale: "#FDF5EE",
+    accent: "#6FA82E",
+    pale: "#EEF6E0",
   },
   {
     key: "equil",
-    tag: "EQUIL·C",
     icon: "🌊",
     title: "Instável",
     desc: "Dias bons que viram ruins do nada. Humor, sono e energia sempre oscilando.",
-    accent: "#4A7C59",
-    pale: "#E8F0EA",
+    accent: "#2E9E88",
+    pale: "#E4F3EE",
   },
 ];
 
@@ -85,9 +82,9 @@ export default async function Home() {
           aria-hidden="true"
         >
           {[
-            { label: "CALM·A",  color: "#C46060" },
-            { label: "VITAL·B", color: "#C8763A" },
-            { label: "EQUIL·C", color: "#6B9E7A" },
+            { label: "MENTE ACELERADA", color: "#43C0C0" },
+            { label: "SEM ENERGIA",     color: "#9FD154" },
+            { label: "INSTÁVEL",        color: "#5FC6AD" },
           ].map((f, i) => (
             <div
               key={f.label}
@@ -252,24 +249,11 @@ export default async function Home() {
                   <div style={{ flex: 1 }}>
                     <div
                       style={{
-                        fontSize: "0.6rem",
-                        fontWeight: 600,
-                        letterSpacing: "2px",
-                        textTransform: "uppercase",
-                        color: f.accent,
-                        marginBottom: 2,
-                        fontFamily: "var(--font-dm-sans)",
-                      }}
-                    >
-                      {f.tag}
-                    </div>
-                    <div
-                      style={{
                         fontFamily: "var(--font-playfair)",
-                        fontSize: "1rem",
+                        fontSize: "1.05rem",
                         fontWeight: 700,
                         color: "var(--vivea-dark)",
-                        marginBottom: 3,
+                        marginBottom: 4,
                       }}
                     >
                       {f.title}

@@ -40,17 +40,17 @@ function formatarTelefone(valor: string) {
     .slice(0, 15);
 }
 
-/** Cores e nome de cada bloco, por perfil (1→CALM·A, 2→VITAL·B, 3→EQUIL·C). */
+/** Cores e nome de cada bloco, por perfil (1→Vitalyx Calm, 2→Vitalyx Energy, 3→Vitalyx Balance). */
 const perfilUI: Record<number, { nome: string; badge: string; botao: string }> = {
   1: {
     nome: "Mente & Alerta",
-    badge: "bg-rose-50 text-rose-700 border-rose-200",
-    botao: "bg-rose-500 text-white ring-2 ring-rose-400/30",
+    badge: "bg-teal-50 text-teal-700 border-teal-200",
+    botao: "bg-teal-500 text-white ring-2 ring-teal-400/30",
   },
   2: {
     nome: "Energia & Motivação",
-    badge: "bg-amber-50 text-amber-700 border-amber-200",
-    botao: "bg-amber-500 text-white ring-2 ring-amber-400/30",
+    badge: "bg-lime-50 text-lime-700 border-lime-200",
+    botao: "bg-lime-500 text-white ring-2 ring-lime-400/30",
   },
   3: {
     nome: "Humor & Estabilidade",

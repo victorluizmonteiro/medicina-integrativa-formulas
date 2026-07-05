@@ -80,7 +80,7 @@ export default function ResultadoPage() {
     return (
       <main style={{ minHeight: "100vh", background: "var(--vivea-cream)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", color: "#aaa", fontFamily: "var(--font-dm-sans)" }}>
-          <div style={{ width: 32, height: 32, border: "2px solid #4A7C59", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <div style={{ width: 32, height: 32, border: "2px solid #0E8C8C", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           Carregando resultado...
         </div>
@@ -92,9 +92,9 @@ export default function ResultadoPage() {
   const resultado = obterResultado(formula, pontos);
 
   /* Cores por fórmula */
-  const cor      = formula === "A" ? "#C46060"  : formula === "B" ? "#C8763A"  : "#4A7C59";
-  const corPale  = formula === "A" ? "#FDF0F0"  : formula === "B" ? "#FDF5EE"  : "#E8F0EA";
-  const corLight = formula === "A" ? "#d4857f"  : formula === "B" ? "#d4955e"  : "#6B9E7A";
+  const cor      = formula === "A" ? "#158C93"  : formula === "B" ? "#6FA82E"  : "#2E9E88";
+  const corPale  = formula === "A" ? "#E2F1F1"  : formula === "B" ? "#EEF6E0"  : "#E4F3EE";
+  const corLight = formula === "A" ? "#43C0C0"  : formula === "B" ? "#9FD154"  : "#5FC6AD";
 
   const iniciarPagamento = async () => {
     setPagando(true);
@@ -143,8 +143,8 @@ export default function ResultadoPage() {
               fontWeight: 500,
               letterSpacing: "1.8px",
               textTransform: "uppercase",
-              color: "#4A7C59",
-              background: "#E8F0EA",
+              color: "#0E8C8C",
+              background: "#E1F1F0",
               padding: "5px 12px",
               borderRadius: "20px",
               fontFamily: "var(--font-dm-sans)",
