@@ -5,7 +5,14 @@ export async function verificarTurnstile(
   ip?: string
 ): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // desativado (dev)
+  if (!secret) {
+    if (process.env.VERCEL_ENV === "production") {
+      console.error(
+        "[SEGURANÇA] TURNSTILE_SECRET_KEY ausente em produção — anti-bot DESATIVADO."
+      );
+    }
+    return true; // desativado (dev)
+  }
   if (!token) return false;
 
   try {

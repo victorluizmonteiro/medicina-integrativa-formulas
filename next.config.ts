@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
-// Content-Security-Policy — enviado em modo REPORT-ONLY por segurança:
-// ele NÃO bloqueia nada ainda, apenas reporta violações no console do
-// navegador. Depois de validar que a página funciona sem avisos, troque
-// a chave abaixo de "Content-Security-Policy-Report-Only" para
-// "Content-Security-Policy" para passar a aplicar de verdade.
+// Content-Security-Policy — ATIVO (bloqueia recursos fora da lista).
+// Se um recurso novo for adicionado (script/API externa), inclua o domínio
+// na diretiva correspondente abaixo.
 const csp = [
   "default-src 'self'",
   // Turnstile (anti-bot) carrega script do Cloudflare
@@ -34,8 +32,7 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
   },
-  // Report-Only por enquanto (ver comentário acima)
-  { key: "Content-Security-Policy-Report-Only", value: csp },
+  { key: "Content-Security-Policy", value: csp },
 ];
 
 const nextConfig: NextConfig = {
