@@ -121,7 +121,10 @@ export default function QuestionnaireForm({ perguntas }: { perguntas: PerguntaPr
     perguntasPerfilAtual().every((p) => respostas[p.id] !== undefined);
 
   const dadosClienteValidos = () =>
-    cliente.nome.trim() && cliente.cpf.replace(/\D/g, "").length === 11 && consentimento;
+    cliente.nome.trim() &&
+    cliente.cpf.replace(/\D/g, "").length === 11 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cliente.email.trim()) &&
+    consentimento;
 
   const progresso = ((passo - 1) / TOTAL_STEPS) * 100;
 
@@ -264,9 +267,12 @@ export default function QuestionnaireForm({ perguntas }: { perguntas: PerguntaPr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                E-mail <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
+                required
                 value={cliente.email}
                 onChange={(e) => setCliente({ ...cliente, email: e.target.value })}
                 placeholder="seu@email.com"

@@ -68,12 +68,18 @@ export async function POST(req: NextRequest) {
     });
 
     // Registra a tentativa de pagamento
-    await supabaseAdmin.from("pagamentos").insert({
+    const { error: pagErr } = await supabaseAdmin.from("pagamentos").insert({
       avaliacao_id: avaliacao.id,
       stripe_session_id: session.id,
       valor_centavos: preco,
       status: "pendente",
     });
+    if (pagErr) {
+      // Não bloqueia o checkout, mas precisa ser visto: sem esta linha o
+      // webhook não encontra o registro para marcar como pago.
+      console.error("Erro ao registrar pagamento pendente:", pagErr);
+      Sentry.captureException(new Error(`pagamentos insert: ${pagErr.message}`));
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (err) {

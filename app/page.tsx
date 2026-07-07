@@ -2,6 +2,10 @@ import QuestionnaireForm from "@/components/QuestionnaireForm";
 import { getPerguntas } from "@/lib/data";
 import BrandLogo from "@/components/BrandLogo";
 
+// ISR: a home é servida estática pela CDN e re-renderizada no máximo 1x/hora.
+// As perguntas mudam raramente; edições no Supabase aparecem em até 1h.
+export const revalidate = 3600;
+
 /* ── Cards das fórmulas ── */
 const formulas = [
   {

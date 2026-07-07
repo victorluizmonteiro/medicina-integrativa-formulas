@@ -9,6 +9,14 @@ const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 const redis = url && token ? new Redis({ url, token }) : null;
 
+// Guarda de produção: fail-open é aceitável em dev, mas em produção
+// rodar sem rate limiting é um risco silencioso — loga erro alto.
+if (!redis && process.env.VERCEL_ENV === "production") {
+  console.error(
+    "[SEGURANÇA] UPSTASH_REDIS_REST_URL/TOKEN ausentes em produção — rate limiting DESATIVADO."
+  );
+}
+
 function criarLimiter(limite: number, janela: `${number} m`, prefixo: string) {
   if (!redis) return null;
   return new Ratelimit({

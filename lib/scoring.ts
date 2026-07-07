@@ -99,6 +99,28 @@ export function obterResultado(formula: Formula, pontuacao: number): ResultadoFo
       corGradient: "from-[#158C93] to-[#43C0C0]",
       icone: "⚡",
       pontuacao: pontuacao,
+      perfilTexto: [
+        { tipo: "citacao", texto: "Meu corpo nunca desliga." },
+        {
+          tipo: "paragrafo",
+          texto:
+            "É o perfil de quem vive acelerado por dentro: mesmo quando está tudo bem, o corpo permanece em alerta e a mente não para.",
+        },
+        {
+          tipo: "paragrafo",
+          texto:
+            "Aparece como ansiedade, dificuldade de relaxar, sono leve, irritabilidade, tensão muscular e cansaço mesmo depois de dormir — em geral em pessoas responsáveis, perfeccionistas e que assumem mais do que conseguem.",
+        },
+        {
+          tipo: "paragrafo",
+          texto:
+            "Mantido por muito tempo, esse estado sobrecarrega o organismo e favorece ansiedade, insônia, burnout, enxaqueca e fadiga.",
+        },
+        {
+          tipo: "resumo",
+          texto: "Um organismo acelerado que precisa aprender a desacelerar.",
+        },
+      ],
     },
     B: {
       formula: "B",

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabaseAdmin } from "@/lib/supabase";
-import { getPerguntas, getFormulasComComposicao } from "@/lib/data";
+import { getPerguntas, getGuia } from "@/lib/data";
+import { gerarGuiaPDFBuffer } from "@/lib/generate-guia-pdf";
 import { calcularResultado, obterResultado } from "@/lib/scoring";
-import { gerarPDFBuffer } from "@/lib/generate-pdf";
 import { limiterSubmit, dentroDoLimite, getIp } from "@/lib/ratelimit";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { submitSchema } from "@/lib/validation";
@@ -127,14 +127,27 @@ export async function POST(req: NextRequest) {
     if (cliente.email) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const formulasComp = await getFormulasComComposicao(perfilId);
-        const pdfBuffer = gerarPDFBuffer(cliente.nome, cliente.cpf, formula, pontos, formulasComp);
+
+        // Guia do Perfil (se cadastrado) — único anexo desta etapa.
+        // A prescrição só é enviada após o pagamento (webhook do Stripe).
+        const anexos: { filename: string; content: Buffer }[] = [];
+        const guia = await getGuia(perfilId);
+        if (guia) {
+          const hex = resultado.cor.replace("#", "");
+          const corRGB: [number, number, number] = [
+            parseInt(hex.slice(0, 2), 16),
+            parseInt(hex.slice(2, 4), 16),
+            parseInt(hex.slice(4, 6), 16),
+          ];
+          const guiaBuffer = gerarGuiaPDFBuffer(cliente.nome, resultado.nome, corRGB, guia);
+          anexos.push({ filename: `guia-vitalyx-${formula}.pdf`, content: guiaBuffer });
+        }
 
         await resend.emails.send({
           from: "Vitalyx Health <onboarding@resend.dev>",
           replyTo: "victorluiz.monteiro@gmail.com",
           to: [cliente.email],
-          subject: `Sua prescrição Vitalyx — Fórmula ${resultado.nome}`,
+          subject: `Seu Guia Vitalyx — Perfil ${resultado.nome}`,
           html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -153,7 +166,7 @@ export async function POST(req: NextRequest) {
           <td style="padding:28px 32px 16px;">
             <p style="margin:0 0 8px;color:#0f172a;font-size:16px;font-weight:700;">Olá, ${cliente.nome.split(" ")[0]}!</p>
             <p style="margin:0;color:#475569;font-size:14px;line-height:1.6;">
-              Sua avaliação foi concluída. Com base nas suas respostas, identificamos o seu perfil e preparamos a sua prescrição personalizada.
+              Sua avaliação foi concluída. Com base nas suas respostas, identificamos o seu perfil e preparamos um guia personalizado com orientações para o seu dia a dia.
             </p>
           </td>
         </tr>
@@ -182,8 +195,11 @@ export async function POST(req: NextRequest) {
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;">
               <tr>
                 <td style="padding:16px 20px;">
+                  <p style="margin:0 0 10px;color:#065f46;font-size:13px;line-height:1.6;">
+                    📎 <strong>Seu Guia do Perfil está em anexo</strong> — com orientações de rotina, alimentação, atividade física, luz e sono, personalizadas para o seu perfil.
+                  </p>
                   <p style="margin:0;color:#065f46;font-size:13px;line-height:1.6;">
-                    📎 <strong>Sua prescrição em PDF está em anexo</strong> neste e-mail. Guarde-a e apresente na farmácia parceira para adquirir a formulação indicada.
+                    💊 Para receber a sua <strong>fórmula personalizada</strong>, finalize o pedido na página de resultado. Após a confirmação do pagamento, enviaremos a prescrição para a farmácia parceira dar andamento.
                   </p>
                 </td>
               </tr>
@@ -202,12 +218,7 @@ export async function POST(req: NextRequest) {
 </body>
 </html>
           `.trim(),
-          attachments: [
-            {
-              filename: `prescricao-vitalyx-${formula}.pdf`,
-              content: pdfBuffer,
-            },
-          ],
+          attachments: anexos,
         });
 
         emailOk = true;

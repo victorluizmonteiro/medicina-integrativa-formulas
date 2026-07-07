@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "./supabase";
+import type { GuiaConteudo } from "./guia";
 
 /** Pergunta como usada pelo formulário e pela pontuação. */
 export interface PerguntaDB {
@@ -82,4 +83,23 @@ export async function getFormulasComComposicao(
         observacao: c.observacao,
       })),
   }));
+}
+
+/**
+ * Carrega o Guia do Perfil (conteúdo JSON). Retorna null se não houver
+ * guia cadastrado para o perfil. Uso exclusivo em servidor.
+ */
+export async function getGuia(perfilId: number): Promise<GuiaConteudo | null> {
+  const { data, error } = await supabaseAdmin
+    .from("guias")
+    .select("conteudo")
+    .eq("perfil_id", perfilId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Erro ao carregar guia: ${error.message}`);
+  const conteudo = data?.conteudo as GuiaConteudo | undefined;
+  if (!conteudo || !Array.isArray(conteudo.secoes) || conteudo.secoes.length === 0) {
+    return null;
+  }
+  return conteudo;
 }

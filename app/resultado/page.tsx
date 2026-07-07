@@ -88,7 +88,7 @@ export default function ResultadoPage() {
     );
   }
 
-  const { formula, pontos, nome, cpf, avaliacaoId, precoCentavos } = sessao;
+  const { formula, pontos, avaliacaoId, precoCentavos } = sessao;
   const resultado = obterResultado(formula, pontos);
 
   /* Cores por fórmula */
@@ -122,37 +122,6 @@ export default function ResultadoPage() {
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
-
-        {/* Header */}
-        <header
-          style={{
-            background: "rgba(247,243,238,0.95)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid rgba(74,124,89,0.12)",
-            padding: "12px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <BrandLogo width={130} />
-          <span
-            style={{
-              fontSize: "0.62rem",
-              fontWeight: 500,
-              letterSpacing: "1.8px",
-              textTransform: "uppercase",
-              color: "#0E8C8C",
-              background: "#E1F1F0",
-              padding: "5px 12px",
-              borderRadius: "20px",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-          >
-            Resultado da Avaliação
-          </span>
-        </header>
 
         <div className="flex-1 flex flex-col items-center justify-start px-4 py-10">
 
@@ -232,60 +201,55 @@ export default function ResultadoPage() {
                 {resultado.subtitulo}
               </h3>
 
-              {/* Pontuação */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    background: corPale,
-                    border: `1px solid ${cor}30`,
-                    borderRadius: 999,
-                    padding: "4px 12px",
-                  }}
-                >
-                  <span style={{ fontWeight: 700, color: cor, fontSize: "0.9rem", fontFamily: "var(--font-dm-sans)" }}>{pontos} pts</span>
-                  <span style={{ color: "#aaa", fontSize: "0.75rem", fontFamily: "var(--font-dm-sans)" }}>/ 100</span>
+
+              {/* Descrição do perfil */}
+              {resultado.perfilTexto ? (
+                <div style={{ marginBottom: 20 }}>
+                  {resultado.perfilTexto.map((bloco, i) => {
+                    if (bloco.tipo === "citacao") {
+                      return (
+                        <p key={i} style={{ margin: "0 0 16px", paddingLeft: 16, borderLeft: `3px solid ${cor}`, fontFamily: "var(--font-playfair)", fontSize: "1.35rem", fontStyle: "italic", fontWeight: 700, lineHeight: 1.3, color: "var(--vivea-dark)" }}>
+                          {bloco.texto}
+                        </p>
+                      );
+                    }
+                    if (bloco.tipo === "lista") {
+                      return (
+                        <ul key={i} style={{ margin: "0 0 14px", padding: 0, listStyle: "none" }}>
+                          {bloco.itens.map((item, j) => (
+                            <li key={j} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: "0.9rem", lineHeight: 1.6, color: "#475569", fontFamily: "var(--font-dm-sans)", marginBottom: 6 }}>
+                              <span style={{ color: cor, fontWeight: 700, lineHeight: 1.5 }}>›</span>
+                              <span style={{ fontStyle: "italic" }}>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    if (bloco.tipo === "resumo") {
+                      return (
+                        <div key={i} style={{ background: corPale, border: `1px solid ${cor}30`, borderRadius: 12, padding: "14px 18px", marginTop: 4 }}>
+                          <p style={{ margin: "0 0 4px", fontSize: "0.62rem", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: cor, fontFamily: "var(--font-dm-sans)" }}>
+                            Em resumo
+                          </p>
+                          <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 500, color: "var(--vivea-dark)", fontFamily: "var(--font-dm-sans)" }}>
+                            {bloco.texto}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <p key={i} style={{ margin: "0 0 12px", fontSize: "0.9rem", lineHeight: 1.7, color: "#475569", fontFamily: "var(--font-dm-sans)", fontWeight: 300 }}>
+                        {bloco.texto}
+                      </p>
+                    );
+                  })}
                 </div>
-                <span style={{ fontSize: "0.75rem", color: "#aaa", fontFamily: "var(--font-dm-sans)" }}>
-                  {pontos < 40 ? "Perfil de baixa intensidade" : pontos < 70 ? "Perfil moderado" : "Perfil dominante"}
-                </span>
-              </div>
-
-              {/* Barra de progresso */}
-              <div style={{ height: 6, background: "#f1f5f9", borderRadius: 999, overflow: "hidden", marginBottom: 20 }}>
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${Math.min(pontos, 100)}%`,
-                    background: `linear-gradient(90deg, ${cor}, ${corLight})`,
-                    borderRadius: 999,
-                    transition: "width 1s ease",
-                  }}
-                />
-              </div>
-
-              {/* Descrição */}
-              <p style={{ fontSize: "0.875rem", lineHeight: 1.7, color: "#555", fontFamily: "var(--font-dm-sans)", fontWeight: 300, marginBottom: 20 }}>
-                {resultado.descricao}
-              </p>
-
-              {/* Box paciente */}
-              <div
-                style={{
-                  background: corPale,
-                  border: `1px solid ${cor}25`,
-                  borderRadius: 14,
-                  padding: "14px 18px",
-                }}
-              >
-                <p style={{ fontSize: "0.65rem", fontWeight: 600, letterSpacing: "1.5px", textTransform: "uppercase", color: "#aaa", marginBottom: 4, fontFamily: "var(--font-dm-sans)" }}>
-                  Paciente
+              ) : (
+                <p style={{ fontSize: "0.875rem", lineHeight: 1.7, color: "#555", fontFamily: "var(--font-dm-sans)", fontWeight: 300, marginBottom: 20 }}>
+                  {resultado.descricao}
                 </p>
-                <p style={{ fontWeight: 600, color: "var(--vivea-dark)", fontFamily: "var(--font-dm-sans)" }}>{nome}</p>
-                <p style={{ fontSize: "0.85rem", color: "#888", fontFamily: "var(--font-dm-sans)" }}>CPF: {cpf}</p>
-              </div>
+              )}
+
             </div>
 
             {/* Aviso da farmácia + ações */}
