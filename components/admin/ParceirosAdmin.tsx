@@ -127,11 +127,29 @@ function LinhaParceiro({ p }: { p: ParceiroLinha }) {
   );
 }
 
+const labelCampo: React.CSSProperties = {
+  display: "block",
+  fontSize: "0.78rem",
+  fontWeight: 600,
+  color: "#334155",
+  marginBottom: 4,
+};
+
+const ajudaCampo: React.CSSProperties = {
+  margin: "4px 0 0",
+  fontSize: "0.7rem",
+  color: "#94a3b8",
+  lineHeight: 1.4,
+};
+
 export default function ParceirosAdmin({ parceiros }: { parceiros: ParceiroLinha[] }) {
   const router = useRouter();
-  const [novo, setNovo] = useState({ slug: "", nome: "", email: "", whatsapp: "", comissao: "0" });
+  const [novo, setNovo] = useState({ slug: "", nome: "", email: "", whatsapp: "", comissao: "" });
   const [criando, setCriando] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const dominio = process.env.NEXT_PUBLIC_BASE_DOMAIN || "seudominio.com.br";
+  const slugLimpo = novo.slug.trim().toLowerCase();
 
   const criar = async () => {
     setCriando(true);
@@ -145,12 +163,12 @@ export default function ParceirosAdmin({ parceiros }: { parceiros: ParceiroLinha
           nome: novo.nome,
           email: novo.email,
           whatsapp: novo.whatsapp,
-          comissao_pct: Number(novo.comissao.replace(",", ".")),
+          comissao_pct: Number((novo.comissao || "0").replace(",", ".")),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || "Erro ao criar");
-      setNovo({ slug: "", nome: "", email: "", whatsapp: "", comissao: "0" });
+      setNovo({ slug: "", nome: "", email: "", whatsapp: "", comissao: "" });
       setMsg("Parceiro criado ✓");
       router.refresh();
     } catch (e) {
@@ -163,31 +181,121 @@ export default function ParceirosAdmin({ parceiros }: { parceiros: ParceiroLinha
   return (
     <div>
       {/* Novo parceiro */}
-      <div style={{ background: "#0A1D34", borderRadius: 12, padding: "16px 18px", marginBottom: 20 }}>
-        <p style={{ margin: "0 0 10px", color: "#fff", fontWeight: 700, fontSize: "0.9rem" }}>Novo parceiro</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
-          <input style={inputStyle} placeholder="slug (ex.: barbozao)" value={novo.slug} onChange={(e) => setNovo({ ...novo, slug: e.target.value })} />
-          <input style={inputStyle} placeholder="Nome da farmácia" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} />
-          <input style={inputStyle} placeholder="E-mail (prescrições)" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} />
-          <input style={inputStyle} placeholder="WhatsApp" value={novo.whatsapp} onChange={(e) => setNovo({ ...novo, whatsapp: e.target.value })} />
-          <input style={inputStyle} placeholder="Comissão %" inputMode="decimal" value={novo.comissao} onChange={(e) => setNovo({ ...novo, comissao: e.target.value })} />
+      <div
+        style={{
+          background: "#fff",
+          border: "1px solid #e2e8f0",
+          borderLeft: "4px solid #0E8C8C",
+          borderRadius: 12,
+          padding: "20px 22px",
+          marginBottom: 24,
+        }}
+      >
+        <p style={{ margin: "0 0 4px", color: "#0A1D34", fontWeight: 700, fontSize: "1rem" }}>
+          Adicionar novo parceiro
+        </p>
+        <p style={{ margin: "0 0 18px", color: "#64748b", fontSize: "0.8rem" }}>
+          Cadastre a farmácia de manipulação que produzirá as fórmulas dos clientes que
+          chegarem pelo link dela.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+          <div>
+            <label style={labelCampo}>
+              Nome da farmácia <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              style={inputStyle}
+              placeholder="Ex.: Farmácia Barbozão"
+              value={novo.nome}
+              onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label style={labelCampo}>
+              Identificador do link (slug) <span style={{ color: "#dc2626" }}>*</span>
+            </label>
+            <input
+              style={inputStyle}
+              placeholder="Ex.: barbozao"
+              value={novo.slug}
+              onChange={(e) => setNovo({ ...novo, slug: e.target.value })}
+            />
+            <p style={ajudaCampo}>
+              Letras minúsculas, números e hífen.{" "}
+              {slugLimpo && (
+                <>
+                  Link do parceiro: <strong>{slugLimpo}.{dominio}</strong>
+                </>
+              )}
+            </p>
+          </div>
+
+          <div>
+            <label style={labelCampo}>E-mail operacional</label>
+            <input
+              style={inputStyle}
+              type="email"
+              placeholder="pedidos@farmacia.com.br"
+              value={novo.email}
+              onChange={(e) => setNovo({ ...novo, email: e.target.value })}
+            />
+            <p style={ajudaCampo}>Recebe as prescrições dos pedidos pagos.</p>
+          </div>
+
+          <div>
+            <label style={labelCampo}>WhatsApp</label>
+            <input
+              style={inputStyle}
+              placeholder="(11) 99999-9999"
+              value={novo.whatsapp}
+              onChange={(e) => setNovo({ ...novo, whatsapp: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label style={labelCampo}>Comissão da plataforma (%)</label>
+            <input
+              style={inputStyle}
+              inputMode="decimal"
+              placeholder="Ex.: 15"
+              value={novo.comissao}
+              onChange={(e) => setNovo({ ...novo, comissao: e.target.value })}
+            />
+            <p style={ajudaCampo}>Percentual retido pela Vitalyx em cada venda deste parceiro.</p>
+          </div>
         </div>
-        <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center" }}>
+
+        <div style={{ marginTop: 18, display: "flex", gap: 12, alignItems: "center" }}>
           <button
             onClick={criar}
-            disabled={criando || !novo.slug || !novo.nome}
-            style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#8FD64B", color: "#0A1D34", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+            disabled={criando || !novo.slug.trim() || !novo.nome.trim()}
+            style={{
+              padding: "10px 22px",
+              borderRadius: 8,
+              border: "none",
+              background: criando || !novo.slug.trim() || !novo.nome.trim() ? "#94a3b8" : "#0E8C8C",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              cursor: criando ? "wait" : "pointer",
+            }}
           >
             {criando ? "Criando…" : "Adicionar parceiro"}
           </button>
-          {msg && <span style={{ fontSize: "0.78rem", color: msg.includes("✓") ? "#8FD64B" : "#fca5a5" }}>{msg}</span>}
+          {msg && (
+            <span style={{ fontSize: "0.8rem", fontWeight: 600, color: msg.includes("✓") ? "#15803d" : "#dc2626" }}>
+              {msg}
+            </span>
+          )}
         </div>
-        <p style={{ margin: "10px 0 0", color: "#9ABFA8", fontSize: "0.72rem" }}>
-          O link do parceiro será: <strong>slug</strong>.{process.env.NEXT_PUBLIC_BASE_DOMAIN || "seudominio.com.br"}
-        </p>
       </div>
 
       {/* Lista */}
+      <p style={{ margin: "0 0 10px", fontSize: "0.8rem", color: "#64748b", fontWeight: 600 }}>
+        Parceiros cadastrados ({parceiros.length})
+      </p>
       {parceiros.map((p) => (
         <LinhaParceiro key={p.id} p={p} />
       ))}
