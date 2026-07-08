@@ -1,10 +1,6 @@
-import QuestionnaireForm from "@/components/QuestionnaireForm";
-import { getPerguntas } from "@/lib/data";
 import BrandLogo from "@/components/BrandLogo";
 
-// ISR: a home é servida estática pela CDN e re-renderizada no máximo 1x/hora.
-// As perguntas mudam raramente; edições no Supabase aparecem em até 1h.
-export const revalidate = 3600;
+// Landing 100% estática — o questionário vive em /avaliacao.
 
 /* ── Cards das fórmulas ── */
 const formulas = [
@@ -34,9 +30,7 @@ const formulas = [
   },
 ];
 
-export default async function Home() {
-  const perguntas = await getPerguntas();
-
+export default function Home() {
   return (
     <main style={{ background: "var(--vivea-cream)", minHeight: "100vh", overflowX: "hidden" }}>
 
@@ -287,7 +281,7 @@ export default async function Home() {
               .vivea-cta:hover  { background: var(--vivea-sage); }
               .vivea-cta:active { transform: scale(0.98); }
             `}</style>
-            <a href="#questionario" className="vivea-cta">
+            <a href="/avaliacao" className="vivea-cta">
               Descobrir meu perfil →
             </a>
             <p
@@ -379,76 +373,6 @@ export default async function Home() {
           </div>
         </div>
       </div>
-
-      {/* ── FORMULÁRIO ──────────────────────────────────────────── */}
-      <section
-        id="questionario"
-        style={{ background: "var(--vivea-cream)", padding: "52px 16px 72px" }}
-      >
-        <div style={{ maxWidth: 672, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <p
-              style={{
-                fontSize: "0.68rem",
-                fontWeight: 500,
-                letterSpacing: "2.5px",
-                textTransform: "uppercase",
-                color: "var(--vivea-sage)",
-                marginBottom: 8,
-                fontFamily: "var(--font-dm-sans)",
-              }}
-            >
-              Questionário Clínico
-            </p>
-            <h2
-              style={{
-                fontFamily: "var(--font-playfair)",
-                fontSize: "clamp(1.4rem, 4vw, 1.9rem)",
-                fontWeight: 900,
-                color: "var(--vivea-dark)",
-                lineHeight: 1.2,
-              }}
-            >
-              Descubra o seu perfil
-            </h2>
-            <p
-              style={{
-                marginTop: 10,
-                fontSize: "0.9rem",
-                color: "#777",
-                fontWeight: 300,
-                fontFamily: "var(--font-dm-sans)",
-              }}
-            >
-              Responda as {perguntas.length} questões abaixo com base nos últimos 3 a 6 meses.
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 24,
-              padding: "28px 24px",
-              boxShadow: "0 4px 32px rgba(26,46,34,0.07)",
-              border: "1px solid rgba(74,124,89,0.12)",
-            }}
-          >
-            <QuestionnaireForm perguntas={perguntas} />
-          </div>
-
-          <p
-            style={{
-              marginTop: 20,
-              fontSize: "0.72rem",
-              color: "#aaa",
-              textAlign: "center",
-              fontFamily: "var(--font-dm-sans)",
-            }}
-          >
-            Suas respostas são confidenciais e utilizadas exclusivamente para indicação da formulação adequada.
-          </p>
-        </div>
-      </section>
 
     </main>
   );

@@ -3,10 +3,15 @@ import type { NextConfig } from "next";
 // Content-Security-Policy — ATIVO (bloqueia recursos fora da lista).
 // Se um recurso novo for adicionado (script/API externa), inclua o domínio
 // na diretiva correspondente abaixo.
+// Em desenvolvimento o React precisa de eval() (debug/callstacks);
+// em produção ele nunca usa — mantemos a política rigorosa.
+const scriptExtra =
+  process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
+
 const csp = [
   "default-src 'self'",
   // Turnstile (anti-bot) carrega script do Cloudflare
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  `script-src 'self' 'unsafe-inline'${scriptExtra} https://challenges.cloudflare.com`,
   // estilos inline usados na UI
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",

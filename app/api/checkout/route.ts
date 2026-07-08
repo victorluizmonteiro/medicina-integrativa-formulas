@@ -63,6 +63,17 @@ export async function POST(req: NextRequest) {
         },
       ],
       metadata: { avaliacao_id: avaliacao.id },
+      // Coleta os dados de entrega/cobrança no próprio checkout do Stripe
+      phone_number_collection: { enabled: true },
+      shipping_address_collection: { allowed_countries: ["BR"] },
+      custom_fields: [
+        {
+          key: "cpf",
+          label: { type: "custom", custom: "CPF do paciente" },
+          type: "text",
+          text: { minimum_length: 11, maximum_length: 14 },
+        },
+      ],
       success_url: `${baseUrl}/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/resultado`,
     });

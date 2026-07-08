@@ -7,6 +7,7 @@ import { calcularResultado, obterResultado } from "@/lib/scoring";
 import { limiterSubmit, dentroDoLimite, getIp } from "@/lib/ratelimit";
 import { verificarTurnstile } from "@/lib/turnstile";
 import { submitSchema } from "@/lib/validation";
+import { getParceiro, slugDoHost } from "@/lib/parceiros";
 import * as Sentry from "@sentry/nextjs";
 
 export async function POST(req: NextRequest) {
@@ -56,27 +57,15 @@ export async function POST(req: NextRequest) {
     const { formula, perfilId, pontos } = calcularResultado(perguntas, respostas);
 
     // ── Persiste: cliente → avaliação → respostas ───────────────
-    const idadeNum = cliente.idade ? parseInt(cliente.idade, 10) : null;
-
+    // Só nome + e-mail nesta etapa. CPF, telefone e endereço são
+    // preenchidos pelo webhook após o checkout do Stripe.
     const { data: clienteRow, error: clienteErr } = await supabaseAdmin
       .from("clientes")
-      .upsert(
-        {
-          nome: cliente.nome,
-          cpf: cliente.cpf,
-          email: cliente.email || null,
-          telefone: cliente.telefone || null,
-          idade: Number.isFinite(idadeNum) ? idadeNum : null,
-          consentimento_lgpd: cliente.consentimento ?? false,
-          cep: cliente.cep || null,
-          endereco: cliente.endereco || null,
-          numero: cliente.numero || null,
-          complemento: cliente.complemento || null,
-          cidade: cliente.cidade || null,
-          estado: cliente.estado || null,
-        },
-        { onConflict: "cpf" }
-      )
+      .insert({
+        nome: cliente.nome,
+        email: cliente.email,
+        consentimento_lgpd: cliente.consentimento ?? false,
+      })
       .select("id")
       .single();
 
@@ -85,12 +74,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ erro: "Erro ao salvar dados do cliente" }, { status: 500 });
     }
 
+    // Parceiro de origem: cookie de atribuição (first-touch) → subdomínio → default
+    const slugParceiro =
+      req.cookies.get("vx_parceiro")?.value ?? slugDoHost(req.headers.get("host"));
+    const parceiro = await getParceiro(slugParceiro ?? null);
+
     const { data: avaliacaoRow, error: avaliacaoErr } = await supabaseAdmin
       .from("avaliacoes")
       .insert({
         cliente_id: clienteRow.id,
         perfil_id: perfilId,
         pontuacao_total: pontos,
+        parceiro_id: parceiro?.id ?? null,
       })
       .select("id")
       .single();
@@ -233,7 +228,6 @@ export async function POST(req: NextRequest) {
       pontuacaoTotal: pontos,
       avaliacaoId: avaliacaoRow.id,
       precoCentavos,
-      cliente: { nome: cliente.nome, cpf: cliente.cpf },
       emailOk,
     });
   } catch (err) {
