@@ -27,10 +27,49 @@ const card: React.CSSProperties = {
   marginBottom: 16,
 };
 
+// Tipo explícito: o select montado por concatenação não é inferível
+// pelo parser de tipos do supabase-js (viraria GenericStringError).
+interface ClienteDetalhe {
+  nome: string;
+  cpf: string | null;
+  email: string | null;
+  telefone: string | null;
+  idade: number | null;
+  endereco: string | null;
+  numero: string | null;
+  complemento: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+}
+interface PagamentoDetalhe {
+  status: string;
+  valor_centavos: number;
+  metodo: string | null;
+  pago_em: string | null;
+}
+interface AvDetalhe {
+  id: string;
+  data_preenchimento: string;
+  pago: boolean;
+  prescricao_enviada: boolean;
+  prescricao_enviada_em: string | null;
+  status_pedido: string | null;
+  pontuacao_total: number | null;
+  perfil_id: number | null;
+  perfis: { nome: string } | { nome: string }[] | null;
+  parceiros:
+    | { nome: string; email: string | null; comissao_pct: number }
+    | { nome: string; email: string | null; comissao_pct: number }[]
+    | null;
+  clientes: ClienteDetalhe | ClienteDetalhe[] | null;
+  pagamentos: PagamentoDetalhe | PagamentoDetalhe[] | null;
+}
+
 export default async function AdminPedido({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const { data: av } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from("avaliacoes")
     .select(
       "id, data_preenchimento, pago, prescricao_enviada, prescricao_enviada_em, status_pedido, pontuacao_total, perfil_id, " +
@@ -41,6 +80,7 @@ export default async function AdminPedido({ params }: { params: Promise<{ id: st
     .eq("id", id)
     .maybeSingle();
 
+  const av = data as unknown as AvDetalhe | null;
   if (!av) notFound();
 
   const cliente = um(av.clientes);

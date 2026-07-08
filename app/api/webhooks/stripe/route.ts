@@ -96,7 +96,32 @@ async function enviarConfirmacao(avaliacaoId: string) {
         "parceiros ( nome, email )"
     );
 
-  const av = claimed?.[0];
+  // Cast explícito: select por concatenação não é inferível pelo
+  // parser de tipos do supabase-js (viraria GenericStringError).
+  interface ClienteRow {
+    nome: string;
+    cpf: string | null;
+    email: string | null;
+    telefone: string | null;
+    endereco: string | null;
+    numero: string | null;
+    complemento: string | null;
+    cidade: string | null;
+    estado: string | null;
+    cep: string | null;
+  }
+  interface AvRow {
+    id: string;
+    perfil_id: number | null;
+    pontuacao_total: number | null;
+    clientes: ClienteRow | ClienteRow[] | null;
+    parceiros:
+      | { nome: string; email: string | null }
+      | { nome: string; email: string | null }[]
+      | null;
+  }
+
+  const av = (claimed as unknown as AvRow[] | null)?.[0];
   if (!av || !av.perfil_id) return;
 
   const cliente = Array.isArray(av.clientes) ? av.clientes[0] : av.clientes;
@@ -157,7 +182,7 @@ async function enviarConfirmacao(avaliacaoId: string) {
       const formulasComp = await getFormulasComComposicao(av.perfil_id);
       const pdfBuffer = gerarPDFBuffer(
         cliente.nome,
-        cliente.cpf,
+        cliente.cpf ?? "—",
         formula,
         av.pontuacao_total ?? 0,
         formulasComp
@@ -186,7 +211,7 @@ async function enviarConfirmacao(avaliacaoId: string) {
   <table cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.8;color:#334155;">
     <tr><td style="padding-right:16px;color:#94a3b8;">Fórmula</td><td><strong>${resultado.nome}</strong></td></tr>
     <tr><td style="padding-right:16px;color:#94a3b8;">Cliente</td><td>${cliente.nome}</td></tr>
-    <tr><td style="padding-right:16px;color:#94a3b8;">CPF</td><td>${cliente.cpf}</td></tr>
+    <tr><td style="padding-right:16px;color:#94a3b8;">CPF</td><td>${cliente.cpf ?? "—"}</td></tr>
     <tr><td style="padding-right:16px;color:#94a3b8;">Telefone</td><td>${cliente.telefone ?? "—"}</td></tr>
     <tr><td style="padding-right:16px;color:#94a3b8;">E-mail</td><td>${cliente.email}</td></tr>
     <tr><td style="padding-right:16px;color:#94a3b8;">Entrega</td><td>${enderecoEntrega || "—"}</td></tr>

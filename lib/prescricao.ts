@@ -8,6 +8,32 @@ function um<T>(v: T | T[] | null): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v;
 }
 
+// Tipos explícitos: select por concatenação não é inferível pelo
+// parser de tipos do supabase-js (viraria GenericStringError).
+interface ClientePrescricao {
+  nome: string;
+  cpf: string | null;
+  email: string | null;
+  telefone: string | null;
+  endereco: string | null;
+  numero: string | null;
+  complemento: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+}
+interface AvPrescricao {
+  id: string;
+  perfil_id: number | null;
+  pontuacao_total: number | null;
+  pago: boolean;
+  clientes: ClientePrescricao | ClientePrescricao[] | null;
+  parceiros:
+    | { nome: string; email: string | null }
+    | { nome: string; email: string | null }[]
+    | null;
+}
+
 /**
  * Envia (ou reenvia) a prescrição em PDF para a farmácia parceira
  * da avaliação. Usada pelo painel admin. Marca prescricao_enviada
@@ -16,7 +42,7 @@ function um<T>(v: T | T[] | null): T | null {
 export async function enviarPrescricaoFarmacia(
   avaliacaoId: string
 ): Promise<{ ok: boolean; motivo?: string }> {
-  const { data: av } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from("avaliacoes")
     .select(
       "id, perfil_id, pontuacao_total, pago, " +
@@ -26,6 +52,7 @@ export async function enviarPrescricaoFarmacia(
     .eq("id", avaliacaoId)
     .maybeSingle();
 
+  const av = data as unknown as AvPrescricao | null;
   if (!av) return { ok: false, motivo: "Avaliação não encontrada" };
   if (!av.pago) return { ok: false, motivo: "Pedido ainda não está pago" };
   if (!av.perfil_id) return { ok: false, motivo: "Avaliação sem perfil" };

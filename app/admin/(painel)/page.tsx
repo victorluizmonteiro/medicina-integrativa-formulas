@@ -76,7 +76,8 @@ export default async function AdminPedidos({
   if (clienteIds) query = query.in("cliente_id", clienteIds.length ? clienteIds : ["00000000-0000-0000-0000-000000000000"]);
 
   const { data, error } = await query;
-  const linhas = (data ?? []) as Linha[];
+  // Cast explícito: select por concatenação não é inferível pelo supabase-js
+  const linhas = (data ?? []) as unknown as Linha[];
 
   const abas = [
     { key: "todos", label: "Todos" },
