@@ -14,8 +14,6 @@ interface Sessao {
   pontos: number;
   avaliacaoId: string;
   precoCentavos: number;
-  nome: string;
-  cpf: string;
   emailOk: boolean | null;
 }
 
